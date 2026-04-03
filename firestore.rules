@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    match /events/{eventId} {
+      // Allow anyone to create events (this is for the tracking API)
+      // In a production app, you might want to restrict this to server-side only
+      // or use a specific API key, but for this diploma project, we allow public creates.
+      allow create: if true;
+      
+      // Only authenticated users can read the analytics data
+      allow read: if isAuthenticated();
+      
+      // Events should not be updated or deleted
+      allow update, delete: if false;
+    }
+  }
+}
