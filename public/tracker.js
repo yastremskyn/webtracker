@@ -1,5 +1,16 @@
 (function() {
-  const TRACKING_URL = '/api/track'; // In a real scenario, this would be the absolute URL of the analytics server
+  // Get the script tag that loaded this file to determine the analytics server URL
+  const scripts = document.getElementsByTagName('script');
+  let analyticsServerUrl = '';
+  for (let i = 0; i < scripts.length; i++) {
+    if (scripts[i].src && scripts[i].src.includes('tracker.js')) {
+      const url = new URL(scripts[i].src);
+      analyticsServerUrl = url.origin;
+      break;
+    }
+  }
+
+  const TRACKING_URL = analyticsServerUrl + '/api/track';
 
   function generateSessionId() {
     let sessionId = sessionStorage.getItem('analytics_session_id');

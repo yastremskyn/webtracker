@@ -18,5 +18,13 @@ service cloud.firestore {
       // Events should not be updated or deleted
       allow update, delete: if false;
     }
+
+    match /users/{userId} {
+      // Authenticated users can read the user list
+      allow read: if isAuthenticated();
+      // Users can only create/update their own document
+      allow create, update: if isAuthenticated() && request.auth.uid == userId;
+      allow delete: if false;
+    }
   }
 }
