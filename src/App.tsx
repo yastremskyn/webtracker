@@ -13,6 +13,21 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { format, parseISO, subDays } from 'date-fns';
 import { Activity, Users, MousePointerClick, Globe, LogOut, LogIn, Code, Sun, Moon, LayoutDashboard, BarChart2, ChevronDown, Map as MapIcon, GripHorizontal, X, Plus, Edit2, Check, Sparkles, Compass, Filter, Table, PieChart as PieChartIcon, LineChart as LineChartIcon, FileText, MoreHorizontal, FileDown, Bell, History } from 'lucide-react';
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 'react-simple-maps';
+import * as countries from 'i18n-iso-countries';
+import enLocale from 'i18n-iso-countries/langs/en.json';
+import ukLocale from 'i18n-iso-countries/langs/uk.json';
+
+countries.registerLocale(enLocale);
+countries.registerLocale(ukLocale);
+
+function getFlagEmoji(countryCode: string) {
+  if (!countryCode) return '';
+  const codePoints = countryCode
+    .toUpperCase()
+    .split('')
+    .map(char => 127397 + char.charCodeAt(0));
+  return String.fromCodePoint(...codePoints);
+}
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -114,6 +129,7 @@ export default function App() {
   const [chatInput, setChatInput] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [tooltipContent, setTooltipContent] = useState<{name: string, flag: string, users: number, x: number, y: number} | null>(null);
 
   // Explorations state
   const [explorationState, setExplorationState] = useState<{
@@ -1089,13 +1105,36 @@ export default function App() {
               {/* Map */}
               <div className="absolute inset-0">
                 <ComposableMap projectionConfig={{ scale: 140 }} width={800} height={400} style={{ width: "100%", height: "100%" }}>
-                  <ZoomableGroup center={[0, 20]} zoom={1}>
+                  <ZoomableGroup center={[0, 20]} zoom={1} minZoom={1} maxZoom={8} translateExtent={[[-200, -100], [1000, 500]]}>
                     <Geographies geography={geoUrl}>
                       {({ geographies }) =>
                         geographies.map((geo) => (
                           <Geography
                             key={geo.rsmKey}
                             geography={geo}
+                            onMouseEnter={(e) => {
+                              const alpha2 = countries.numericToAlpha2(geo.id);
+                              if (alpha2) {
+                                const langCode = i18n.language ? i18n.language.split('-')[0] : 'uk';
+                                const name = countries.getName(alpha2, langCode) || countries.getName(alpha2, 'en') || 'Unknown';
+                                const flag = getFlagEmoji(alpha2);
+                                
+                                const activeUsers = new Set(
+                                  events
+                                    .filter(ev => ev.country && countries.getAlpha2Code(ev.country, 'en') === alpha2)
+                                    .filter(ev => ev.timestamp && (now.getTime() - parseISO(ev.timestamp).getTime() <= 30 * 60 * 1000))
+                                    .map(ev => ev.sessionId)
+                                ).size;
+
+                                setTooltipContent({ name, flag, users: activeUsers, x: e.clientX, y: e.clientY });
+                              }
+                            }}
+                            onMouseMove={(e) => {
+                              setTooltipContent(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null);
+                            }}
+                            onMouseLeave={() => {
+                              setTooltipContent(null);
+                            }}
                             fill={isDarkMode ? "#1f2937" : "#f3f4f6"}
                             stroke={isDarkMode ? "#374151" : "#d1d5db"}
                             strokeWidth={0.5}
@@ -1148,6 +1187,27 @@ export default function App() {
                   </div>
                 </div>
               </div>
+              
+              {/* Tooltip */}
+              {tooltipContent && (
+                <div 
+                  className="fixed z-50 pointer-events-none bg-gray-900 text-white text-sm px-3 py-2 rounded-lg shadow-xl border border-gray-700 flex flex-col gap-1 transition-opacity duration-150"
+                  style={{ 
+                    left: tooltipContent.x + 15, 
+                    top: tooltipContent.y + 15,
+                    transform: 'translate(0, 0)'
+                  }}
+                >
+                  <div className="flex items-center gap-2 font-medium">
+                    <span className="text-lg leading-none">{tooltipContent.flag}</span>
+                    <span>{tooltipContent.name}</span>
+                  </div>
+                  <div className="text-gray-300 text-xs flex justify-between items-center gap-4">
+                    <span>{t("realtime.active_users", "Активні користувачі")}:</span>
+                    <span className="font-bold text-white">{tooltipContent.users}</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
