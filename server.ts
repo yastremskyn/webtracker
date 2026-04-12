@@ -7,6 +7,7 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
 import fs from 'fs';
 import { GoogleGenAI } from '@google/genai';
+import nodemailer from 'nodemailer';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -90,6 +91,48 @@ async function startServer() {
     } catch (error) {
       console.error('Error in chat API:', error);
       res.status(500).json({ error: 'Failed to generate AI response' });
+    }
+  });
+
+  // Email Alerts Endpoint
+  app.post('/api/alerts/test', async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+        return res.status(500).json({ error: 'Email credentials (GMAIL_USER, GMAIL_APP_PASSWORD) are not configured in .env' });
+      }
+
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.GMAIL_USER,
+          pass: process.env.GMAIL_APP_PASSWORD,
+        },
+      });
+
+      const targetEmail = email || process.env.GMAIL_USER;
+
+      await transporter.sendMail({
+        from: `"WebAnalytics Pro" <${process.env.GMAIL_USER}>`,
+        to: targetEmail,
+        subject: 'Test Alert: WebAnalytics Pro',
+        text: 'This is a test alert from your WebAnalytics Pro dashboard. Email notifications are working!',
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+            <h2 style="color: #4F46E5;">WebAnalytics Pro</h2>
+            <h3>Test Alert Successful</h3>
+            <p>Hello!</p>
+            <p>This is a test alert from your WebAnalytics Pro dashboard. If you are reading this, your email notifications are configured correctly.</p>
+            <p style="color: #666; font-size: 14px; margin-top: 30px;">This is an automated message, please do not reply.</p>
+          </div>
+        `
+      });
+
+      res.status(200).json({ success: true, message: 'Test email sent successfully' });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      res.status(500).json({ error: 'Failed to send email. Check your credentials.' });
     }
   });
 

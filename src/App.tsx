@@ -105,6 +105,7 @@ export default function App() {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [widgets, setWidgets] = useState(() => getInitialBehaviorWidgets());
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isSendingTest, setIsSendingTest] = useState(false);
   interface ChatMessage {
     role: 'user' | 'model';
     content: string;
@@ -203,6 +204,26 @@ export default function App() {
     } else if (templateId === 'marketing') {
       setWidgets(getInitialMarketingWidgets());
     }
+  };
+
+  const handleTestEmail = async () => {
+    setIsSendingTest(true);
+    try {
+      const res = await fetch('/api/alerts/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: auth.currentUser?.email })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Тестовий лист успішно відправлено! Перевірте вашу пошту.');
+      } else {
+        alert('Помилка: ' + data.error);
+      }
+    } catch (e) {
+      alert('Помилка відправки. Перевірте з\'єднання.');
+    }
+    setIsSendingTest(false);
   };
 
   const handleSendMessage = async (messageText?: string) => {
@@ -1525,10 +1546,19 @@ export default function App() {
                   Configure email alerts for important events and metric changes.
                 </p>
               </div>
-              <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors flex items-center gap-2">
-                <Plus size={16} />
-                Create Alert
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={handleTestEmail}
+                  disabled={isSendingTest}
+                  className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isSendingTest ? 'Відправка...' : 'Тестовий лист'}
+                </button>
+                <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors flex items-center gap-2">
+                  <Plus size={16} />
+                  Create Alert
+                </button>
+              </div>
             </div>
 
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
