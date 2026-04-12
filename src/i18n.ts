@@ -17,7 +17,12 @@ const resources = {
         reports: "Reports",
         reports_overview: "Reports Overview",
         realtime: "Realtime",
-        users_list: "Users List",
+        explorations: "Explore",
+        ai_analytics: "AI Analytics",
+        other: "Other",
+        export_pdf: "Export to PDF",
+        notifications: "Email Notifications",
+        audit_log: "Audit Log",
         logout: "Logout"
       },
       theme: {
@@ -77,7 +82,17 @@ const resources = {
         users_by_source: "Active users by Source",
         sessions_by_source: "Sessions by Source",
         new_vs_returning: "New vs Returning users",
-        events_by_platform: "Main events by Platform"
+        events_by_platform: "Main events by Platform",
+        total_revenue: "Total Revenue",
+        ecommerce_purchases: "Ecommerce purchases",
+        purchase_revenue_by_item: "Purchase revenue by Item",
+        arpu: "Average revenue per user (ARPU)",
+        purchasers: "Purchasers",
+        sessions_by_campaign: "Sessions by Campaign",
+        conversions_by_source: "Conversions by Source",
+        cost_per_conversion: "Cost per conversion",
+        roas: "Return on ad spend (ROAS)",
+        bounce_rate_by_channel: "Bounce rate by Channel"
       },
       realtime: {
         title: "Realtime Overview",
@@ -101,6 +116,42 @@ const resources = {
         no_data: "No visitor data available",
         anonymous: "Anonymous"
       },
+      ai_analytics: {
+        title: "AI Analytics Chat",
+        description: "Chat with our AI assistant to analyze your website's performance. It will highlight what's working well and what needs improvement.",
+        placeholder: "Ask a question about your analytics...",
+        send: "Send",
+        analyzing: "AI is typing...",
+        error: "Failed to send message. Please try again.",
+        start_chat: "Start Analysis"
+      },
+      explorations: {
+        title: "Explorations",
+        gallery_title: "Start a new exploration",
+        blank: "Blank",
+        free_form: "Free form",
+        funnel: "Funnel exploration",
+        path: "Path exploration",
+        variables: "Variables",
+        tab_settings: "Tab Settings",
+        dimensions: "Dimensions",
+        metrics: "Metrics",
+        visualization: "Visualization",
+        rows: "Rows",
+        values: "Values",
+        drop_dimension: "Select dimension",
+        drop_metric: "Select metric",
+        dim_path: "Page path",
+        dim_event: "Event name",
+        dim_country: "Country",
+        dim_date: "Date",
+        met_event_count: "Event count",
+        met_user_count: "Active users",
+        table: "Table",
+        donut: "Donut",
+        line: "Line",
+        no_data: "Please select at least one dimension and one metric to generate the report."
+      },
       footer: {
         rights: "All rights reserved."
       }
@@ -121,7 +172,12 @@ const resources = {
         reports: "Звіти",
         reports_overview: "Короткий огляд звітів",
         realtime: "У реальному часі",
-        users_list: "Список користувачів",
+        explorations: "Дослідження",
+        ai_analytics: "ШІ аналітика",
+        other: "Інше",
+        export_pdf: "Експорт у PDF",
+        notifications: "Сповіщення на email",
+        audit_log: "Журнал аудиту",
         logout: "Вийти"
       },
       theme: {
@@ -181,7 +237,17 @@ const resources = {
         users_by_source: "Активні користувачі за Джерело",
         sessions_by_source: "Сеанси за Джерело",
         new_vs_returning: "Нові користувачі й ті, що повернулися",
-        events_by_platform: "Основні події за Платформа"
+        events_by_platform: "Основні події за Платформа",
+        total_revenue: "Загальний дохід",
+        ecommerce_purchases: "Покупки в електронній комерції",
+        purchase_revenue_by_item: "Дохід від покупок за Товар",
+        arpu: "Середній дохід на користувача (ARPU)",
+        purchasers: "Покупці",
+        sessions_by_campaign: "Сеанси за Кампанія",
+        conversions_by_source: "Конверсії за Джерело",
+        cost_per_conversion: "Ціна за конверсію",
+        roas: "Рентабельність витрат на рекламу (ROAS)",
+        bounce_rate_by_channel: "Показник відмов за Канал"
       },
       realtime: {
         title: "Огляд у реальному часі",
@@ -204,6 +270,42 @@ const resources = {
         offline: "Офлайн",
         no_data: "Немає даних про відвідувачів сайту",
         anonymous: "Анонімний"
+      },
+      ai_analytics: {
+        title: "ШІ Аналітика (Чат)",
+        description: "Спілкуйтеся з нашим ШІ-асистентом для аналізу ефективності вашого сайту. Він підкаже, що працює добре, а що потребує покращення.",
+        placeholder: "Задайте питання про вашу аналітику...",
+        send: "Надіслати",
+        analyzing: "ШІ друкує...",
+        error: "Не вдалося надіслати повідомлення. Спробуйте ще раз.",
+        start_chat: "Почати аналіз"
+      },
+      explorations: {
+        title: "Дослідження",
+        gallery_title: "Почати нове дослідження",
+        blank: "Пустий",
+        free_form: "Довільна форма",
+        funnel: "Дослідження послідовності",
+        path: "Дослідження шляху",
+        variables: "Змінні",
+        tab_settings: "Налаштування вкладки",
+        dimensions: "Параметри",
+        metrics: "Показники",
+        visualization: "Візуалізація",
+        rows: "Рядки",
+        values: "Значення",
+        drop_dimension: "Виберіть параметр",
+        drop_metric: "Виберіть показник",
+        dim_path: "Шлях сторінки",
+        dim_event: "Назва події",
+        dim_country: "Країна",
+        dim_date: "Дата",
+        met_event_count: "Кількість подій",
+        met_user_count: "Активні користувачі",
+        table: "Таблиця",
+        donut: "Кільцева діаграма",
+        line: "Лінійний графік",
+        no_data: "Будь ласка, виберіть принаймні один параметр і один показник для створення звіту."
       },
       footer: {
         rights: "Всі права захищено."

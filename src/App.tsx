@@ -11,7 +11,7 @@ import { db, auth, loginWithGoogle, logout } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { format, parseISO, subDays } from 'date-fns';
-import { Activity, Users, MousePointerClick, Globe, LogOut, LogIn, Code, Sun, Moon, LayoutDashboard, BarChart2, ChevronDown, Map as MapIcon, GripHorizontal, X, Plus, Edit2, Check } from 'lucide-react';
+import { Activity, Users, MousePointerClick, Globe, LogOut, LogIn, Code, Sun, Moon, LayoutDashboard, BarChart2, ChevronDown, Map as MapIcon, GripHorizontal, X, Plus, Edit2, Check, Sparkles, Compass, Filter, Table, PieChart as PieChartIcon, LineChart as LineChartIcon, FileText, MoreHorizontal, FileDown, Bell, History } from 'lucide-react';
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 'react-simple-maps';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -63,6 +63,22 @@ const getInitialBehaviorWidgets = () => [
   { id: 'users_by_city', visible: true, colSpan: 1 },
 ];
 
+const getInitialSalesWidgets = () => [
+  { id: 'total_revenue', visible: true, colSpan: 1 },
+  { id: 'ecommerce_purchases', visible: true, colSpan: 1 },
+  { id: 'purchase_revenue_by_item', visible: true, colSpan: 2 },
+  { id: 'arpu', visible: true, colSpan: 1 },
+  { id: 'purchasers', visible: true, colSpan: 1 },
+];
+
+const getInitialMarketingWidgets = () => [
+  { id: 'sessions_by_campaign', visible: true, colSpan: 2 },
+  { id: 'conversions_by_source', visible: true, colSpan: 1 },
+  { id: 'cost_per_conversion', visible: true, colSpan: 1 },
+  { id: 'roas', visible: true, colSpan: 1 },
+  { id: 'bounce_rate_by_channel', visible: true, colSpan: 1 },
+];
+
 interface AnalyticsEvent {
   id: string;
   eventType: string;
@@ -83,12 +99,74 @@ export default function App() {
   const [events, setEvents] = useState<AnalyticsEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(new Date());
-  const [activeTab, setActiveTab] = useState<'overview' | 'reports' | 'realtime' | 'users'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'reports' | 'realtime' | 'explorations' | 'ai_analytics' | 'notifications' | 'audit_log'>('overview');
   const [isReportsMenuOpen, setIsReportsMenuOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [widgets, setWidgets] = useState(() => getInitialBehaviorWidgets());
   const [isEditMode, setIsEditMode] = useState(false);
+  interface ChatMessage {
+    role: 'user' | 'model';
+    content: string;
+  }
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  // Explorations state
+  const [explorationState, setExplorationState] = useState<{
+    view: 'gallery' | 'editor';
+    name: string;
+    visualization: 'table' | 'donut' | 'line';
+    selectedDimensions: string[];
+    selectedMetrics: string[];
+  }>({
+    view: 'gallery',
+    name: 'Untitled exploration',
+    visualization: 'table',
+    selectedDimensions: [],
+    selectedMetrics: []
+  });
+
+  const availableDimensions = [
+    { id: 'path', label: t('explorations.dim_path') },
+    { id: 'eventType', label: t('explorations.dim_event') },
+    { id: 'country', label: t('explorations.dim_country') },
+    { id: 'date', label: t('explorations.dim_date') },
+  ];
+  const availableMetrics = [
+    { id: 'eventCount', label: t('explorations.met_event_count') },
+    { id: 'userCount', label: t('explorations.met_user_count') },
+  ];
+
+  const generateExplorationData = () => {
+    const dim = explorationState.selectedDimensions[0];
+    const met = explorationState.selectedMetrics[0];
+    if (!dim || !met) return [];
+
+    const grouped = new Map<string, Set<string> | number>();
+
+    events.forEach(e => {
+      let dimValue = 'Unknown';
+      if (dim === 'path') dimValue = e.path || '/';
+      if (dim === 'eventType') dimValue = e.eventType;
+      if (dim === 'country') dimValue = e.country || 'Unknown';
+      if (dim === 'date') dimValue = e.timestamp ? format(parseISO(e.timestamp), 'MMM dd') : 'Unknown';
+
+      if (met === 'eventCount') {
+        grouped.set(dimValue, ((grouped.get(dimValue) as number) || 0) + 1);
+      } else if (met === 'userCount') {
+        if (!grouped.has(dimValue)) grouped.set(dimValue, new Set());
+        (grouped.get(dimValue) as Set<string>).add(e.sessionId);
+      }
+    });
+
+    return Array.from(grouped.entries()).map(([name, value]) => ({
+      name,
+      value: met === 'userCount' ? (value as Set<string>).size : (value as number)
+    })).sort((a, b) => b.value - a.value).slice(0, 15);
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -114,6 +192,104 @@ export default function App() {
 
   const handleAddWidget = (id: string) => {
     setWidgets(widgets.map(w => w.id === id ? { ...w, visible: true } : w));
+  };
+
+  const handleSelectTemplate = (templateId: string) => {
+    setSelectedTemplate(templateId);
+    if (templateId === 'behavior') {
+      setWidgets(getInitialBehaviorWidgets());
+    } else if (templateId === 'sales') {
+      setWidgets(getInitialSalesWidgets());
+    } else if (templateId === 'marketing') {
+      setWidgets(getInitialMarketingWidgets());
+    }
+  };
+
+  const handleSendMessage = async (messageText?: string) => {
+    const textToSend = messageText || chatInput;
+    if (!textToSend.trim()) return;
+
+    const newUserMsg: ChatMessage = { role: 'user', content: textToSend };
+    setChatMessages(prev => [...prev, newUserMsg]);
+    setChatInput('');
+    setIsAnalyzing(true);
+    setAiError(null);
+
+    try {
+      // Summarize data for the AI
+      const totalEvents = events.length;
+      const totalPageViews = events.filter(e => e.eventType === 'page_view').length;
+      const totalClicks = events.filter(e => e.eventType === 'click').length;
+      const uniqueSessions = new Set(events.map(e => e.sessionId)).size;
+      
+      const pageViewsByUrl = events
+        .filter(e => e.eventType === 'page_view')
+        .reduce((acc, e) => {
+          const path = e.path || e.url;
+          acc[path] = (acc[path] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+        
+      const topPages = Object.entries(pageViewsByUrl)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([url, views]) => `${url}: ${views} views`)
+        .join('\\n');
+
+      const systemInstruction = `You are an expert web analytics AI assistant. Your goal is to chat with the user and analyze their website's performance based on the provided data. 
+      Specifically, you MUST explicitly state which metrics are "great" (чудові) and which are "bad" or "need improvement" (погані). Be conversational, concise, and helpful.
+      Respond in ${i18n.language === 'uk' ? 'Ukrainian' : 'English'}.
+      
+      Current Website Data:
+      - Total Events: ${totalEvents}
+      - Total Page Views: ${totalPageViews}
+      - Total Clicks/Interactions: ${totalClicks}
+      - Unique Sessions (Users): ${uniqueSessions}
+      
+      Top 5 Pages:
+      ${topPages}`;
+
+      const history = chatMessages.map(msg => ({
+        role: msg.role,
+        parts: [{ text: msg.content }]
+      }));
+
+      const messagesToSend = [
+        ...history,
+        { role: 'user', parts: [{ text: textToSend }] }
+      ];
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: messagesToSend,
+          systemInstruction
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch AI response');
+      }
+
+      const data = await response.json();
+      const aiResponseText = data.text || 'Error generating response.';
+      setChatMessages(prev => [...prev, { role: 'model', content: aiResponseText }]);
+    } catch (error) {
+      console.error('Error in AI chat:', error);
+      setAiError(t("ai_analytics.error"));
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const startInitialAnalysis = () => {
+    const initialPrompt = i18n.language === 'uk' 
+      ? "Проаналізуй мої поточні дані. Скажи прямо, які показники чудові, а які погані." 
+      : "Analyze my current data. Tell me directly which metrics are great and which are bad.";
+    handleSendMessage(initialPrompt);
   };
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -311,49 +487,97 @@ export default function App() {
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+            <div 
+              className="flex items-center gap-2 text-blue-600 dark:text-blue-400 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => setActiveTab('overview')}
+            >
               <Activity size={24} />
               <span className="font-bold text-xl hidden sm:block text-gray-900 dark:text-white">WebAnalytics Pro</span>
             </div>
             <nav className="hidden md:flex items-center gap-2">
               <button
                 onClick={() => setActiveTab('overview')}
-                className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors ${activeTab === 'overview' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'}`}
+                className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer ${activeTab === 'overview' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700'}`}
               >
                 <LayoutDashboard size={16} />
                 {t("nav.overview")}
               </button>
-              <div className="relative">
+              <div className="relative group">
                 <button
-                  onClick={() => setIsReportsMenuOpen(!isReportsMenuOpen)}
-                  className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors ${(activeTab === 'reports' || activeTab === 'realtime' || activeTab === 'users') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'}`}
+                  className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer ${(activeTab === 'reports' || activeTab === 'realtime' || activeTab === 'ai_analytics') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700'}`}
                 >
                   <BarChart2 size={16} />
                   {t("nav.reports")}
-                  <ChevronDown size={14} className={`transition-transform ${isReportsMenuOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={14} className="transition-transform group-hover:rotate-180" />
                 </button>
-                {isReportsMenuOpen && (
-                  <div className="absolute top-full left-0 mt-1 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+                <div className="absolute top-full left-0 pt-1 w-56 z-50 hidden group-hover:block">
+                  <div className="bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 py-1">
                     <button
-                      onClick={() => { setActiveTab('reports'); setIsReportsMenuOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-sm ${activeTab === 'reports' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                      onClick={() => setActiveTab('reports')}
+                      className={`w-full text-left px-4 py-2 text-sm cursor-pointer transition-colors flex items-center gap-2 ${activeTab === 'reports' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                     >
+                      <FileText size={14} className="text-gray-500" />
                       {t("nav.reports_overview")}
                     </button>
                     <button
-                      onClick={() => { setActiveTab('realtime'); setIsReportsMenuOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-sm ${activeTab === 'realtime' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                      onClick={() => setActiveTab('realtime')}
+                      className={`w-full text-left px-4 py-2 text-sm cursor-pointer transition-colors flex items-center gap-2 ${activeTab === 'realtime' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                     >
+                      <Globe size={14} className="text-gray-500" />
                       {t("nav.realtime")}
                     </button>
                     <button
-                      onClick={() => { setActiveTab('users'); setIsReportsMenuOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-sm ${activeTab === 'users' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                      onClick={() => setActiveTab('ai_analytics')}
+                      className={`w-full text-left px-4 py-2 text-sm cursor-pointer transition-colors ${activeTab === 'ai_analytics' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                     >
-                      {t("nav.users_list")}
+                      <span className="flex items-center gap-2">
+                        <Sparkles size={14} className="text-purple-500" />
+                        {t("nav.ai_analytics")}
+                      </span>
                     </button>
                   </div>
-                )}
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveTab('explorations')}
+                className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer ${activeTab === 'explorations' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700'}`}
+              >
+                <Compass size={16} />
+                {t("nav.explorations")}
+              </button>
+              <div className="relative group">
+                <button
+                  className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer ${(activeTab === 'notifications' || activeTab === 'audit_log') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700'}`}
+                >
+                  <MoreHorizontal size={16} />
+                  {t("nav.other")}
+                  <ChevronDown size={14} className="transition-transform group-hover:rotate-180" />
+                </button>
+                <div className="absolute top-full left-0 pt-1 w-56 z-50 hidden group-hover:block">
+                  <div className="bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 py-1">
+                    <button
+                      onClick={() => window.print()}
+                      className="w-full text-left px-4 py-2 text-sm cursor-pointer transition-colors flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <FileDown size={14} className="text-gray-500" />
+                      {t("nav.export_pdf")}
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('notifications')}
+                      className={`w-full text-left px-4 py-2 text-sm cursor-pointer transition-colors flex items-center gap-2 ${activeTab === 'notifications' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                    >
+                      <Bell size={14} className="text-gray-500" />
+                      {t("nav.notifications")}
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('audit_log')}
+                      className={`w-full text-left px-4 py-2 text-sm cursor-pointer transition-colors flex items-center gap-2 ${activeTab === 'audit_log' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                    >
+                      <History size={14} className="text-gray-500" />
+                      {t("nav.audit_log")}
+                    </button>
+                  </div>
+                </div>
               </div>
             </nav>
           </div>
@@ -596,8 +820,8 @@ export default function App() {
                     </div>
                     <div className="p-4 border-t border-gray-100 dark:border-gray-700 space-y-2">
                       <button 
-                        onClick={() => setSelectedTemplate('behavior')}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-medium transition-colors text-sm"
+                        onClick={() => handleSelectTemplate('behavior')}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-medium transition-colors text-sm cursor-pointer"
                       >
                         {t("reports.select_this")}
                       </button>
@@ -605,7 +829,7 @@ export default function App() {
                   </div>
 
                   {/* Template 2 */}
-                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col opacity-75">
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col transition-transform hover:scale-[1.02] duration-200">
                     <div className="p-6 flex-grow">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t("reports.template_sales")}</h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
@@ -616,14 +840,17 @@ export default function App() {
                       </div>
                     </div>
                     <div className="p-4 border-t border-gray-100 dark:border-gray-700 space-y-2">
-                      <button disabled className="w-full bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 py-2 rounded-md font-medium text-sm cursor-not-allowed">
-                        {t("reports.coming_soon")}
+                      <button 
+                        onClick={() => handleSelectTemplate('sales')}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-medium transition-colors text-sm cursor-pointer"
+                      >
+                        {t("reports.select_this")}
                       </button>
                     </div>
                   </div>
 
                   {/* Template 3 */}
-                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col opacity-75">
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col transition-transform hover:scale-[1.02] duration-200">
                     <div className="p-6 flex-grow">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t("reports.template_marketing")}</h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
@@ -634,8 +861,11 @@ export default function App() {
                       </div>
                     </div>
                     <div className="p-4 border-t border-gray-100 dark:border-gray-700 space-y-2">
-                      <button disabled className="w-full bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 py-2 rounded-md font-medium text-sm cursor-not-allowed">
-                        {t("reports.coming_soon")}
+                      <button 
+                        onClick={() => handleSelectTemplate('marketing')}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-medium transition-colors text-sm cursor-pointer"
+                      >
+                        {t("reports.select_this")}
                       </button>
                     </div>
                   </div>
@@ -656,12 +886,12 @@ export default function App() {
                   <div className="flex items-center gap-3">
                     {isEditMode && (
                       <div className="relative group">
-                        <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">
+                        <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 cursor-pointer">
                           <Plus size={16} />
                           {t("reports.add_widget")}
                         </button>
-                        <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 hidden group-hover:block z-20">
-                          <div className="p-2 space-y-1">
+                        <div className="absolute right-0 top-full pt-2 w-64 z-20 hidden group-hover:block">
+                          <div className="bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 p-2 space-y-1">
                             {widgets.filter(w => !w.visible).length === 0 ? (
                               <p className="text-sm text-gray-500 dark:text-gray-400 p-2 text-center">{t("reports.all_widgets_added")}</p>
                             ) : (
@@ -669,7 +899,7 @@ export default function App() {
                                 <button
                                   key={w.id}
                                   onClick={() => handleAddWidget(w.id)}
-                                  className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                                  className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md cursor-pointer transition-colors"
                                 >
                                   {t(`reports.${w.id}`)}
                                 </button>
@@ -807,6 +1037,13 @@ export default function App() {
                               <div className="flex items-center justify-center h-32 text-sm text-gray-400">{t("overview.no_data")}</div>
                             </>
                           )}
+
+                          {['total_revenue', 'ecommerce_purchases', 'purchase_revenue_by_item', 'arpu', 'purchasers', 'sessions_by_campaign', 'conversions_by_source', 'cost_per_conversion', 'roas', 'bounce_rate_by_channel'].includes(widget.id) && (
+                            <>
+                              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4 uppercase tracking-wider">{t(`reports.${widget.id}`)}</h3>
+                              <div className="flex items-center justify-center h-32 text-sm text-gray-400">{t("overview.no_data")}</div>
+                            </>
+                          )}
                         </SortableWidget>
                       ))}
                     </div>
@@ -894,80 +1131,488 @@ export default function App() {
           </div>
         )}
 
-        {activeTab === 'users' && (
-          <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{t("nav.users_list")}</h1>
-            
-            {(() => {
-              const trackedUsersMap = new Map<string, any>();
-              events.forEach(e => {
-                if (!e.timestamp) return;
-                const eventTime = parseISO(e.timestamp).getTime();
-                if (!trackedUsersMap.has(e.sessionId)) {
-                  trackedUsersMap.set(e.sessionId, {
-                    sessionId: e.sessionId,
-                    email: e.userEmail || '{" + t("users.anonymous") + "} (ID: ' + e.sessionId.substring(0, 8) + '...)',
-                    lastActive: eventTime,
-                    userAgent: e.userAgent
-                  });
-                } else {
-                  const user = trackedUsersMap.get(e.sessionId);
-                  if (eventTime > user.lastActive) {
-                    user.lastActive = eventTime;
-                    if (e.userEmail) user.email = e.userEmail;
-                    user.userAgent = e.userAgent;
-                  }
-                }
-              });
-              const trackedUsers = Array.from(trackedUsersMap.values()).sort((a, b) => b.lastActive - a.lastActive);
+        {activeTab === 'explorations' && (
+          <div className="space-y-6 flex flex-col h-[calc(100vh-12rem)]">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <Compass className="text-blue-500" />
+                {t("explorations.title")}
+              </h1>
+            </div>
 
-              return (
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors duration-200">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
-                          <th className="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-gray-100">{t("users.user_email")}</th>
-                          <th className="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-gray-100">{t("users.status")}</th>
-                          <th className="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-gray-100">{t("users.last_activity")}</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                        {trackedUsers.map((u) => {
-                          // Online if active within the last 2 minutes (120000 ms)
-                          const isOnline = now.getTime() - u.lastActive < 120000;
-
-                          return (
-                            <tr key={u.sessionId} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                              <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-300 font-medium">
-                                {u.email}
-                                <div className="text-xs text-gray-500 font-normal mt-1 truncate max-w-xs" title={u.userAgent}>{u.userAgent}</div>
-                              </td>
-                              <td className="px-6 py-4">
-                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${isOnline ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}`}>
-                                  <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`}></span>
-                                  {isOnline ? t("users.online") : t("users.offline")}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                                {format(new Date(u.lastActive), 'dd.MM.yyyy HH:mm:ss')}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                        {trackedUsers.length === 0 && (
-                          <tr>
-                            <td colSpan={3} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
-                              {t("users.no_data")}
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
+            {explorationState.view === 'gallery' ? (
+              <div className="bg-gray-50 dark:bg-gray-900/30 rounded-xl p-8 border border-gray-200 dark:border-gray-800">
+                <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-6">{t("explorations.gallery_title")}</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                  <button 
+                    onClick={() => setExplorationState(prev => ({ ...prev, view: 'editor', visualization: 'table' }))}
+                    className="group bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 flex flex-col items-center justify-center gap-4 hover:border-blue-500 hover:shadow-md transition-all h-48"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 text-gray-400 group-hover:text-blue-500 transition-colors">
+                      <Plus size={24} />
+                    </div>
+                    <span className="font-medium text-gray-900 dark:text-white">{t("explorations.blank")}</span>
+                  </button>
+                  <button 
+                    onClick={() => setExplorationState(prev => ({ ...prev, view: 'editor', visualization: 'table' }))}
+                    className="group bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 flex flex-col items-center justify-center gap-4 hover:border-blue-500 hover:shadow-md transition-all h-48"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 text-gray-400 group-hover:text-blue-500 transition-colors">
+                      <Table size={24} />
+                    </div>
+                    <span className="font-medium text-gray-900 dark:text-white">{t("explorations.free_form")}</span>
+                  </button>
+                  <button disabled className="opacity-50 cursor-not-allowed bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 flex flex-col items-center justify-center gap-4 h-48">
+                    <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400">
+                      <Filter size={24} />
+                    </div>
+                    <span className="font-medium text-gray-900 dark:text-white">{t("explorations.funnel")}</span>
+                  </button>
+                  <button disabled className="opacity-50 cursor-not-allowed bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 flex flex-col items-center justify-center gap-4 h-48">
+                    <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400">
+                      <GripHorizontal size={24} />
+                    </div>
+                    <span className="font-medium text-gray-900 dark:text-white">{t("explorations.path")}</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex gap-4 overflow-hidden">
+                {/* Variables Column */}
+                <div className="w-64 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden shrink-0">
+                  <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
+                    <h3 className="font-medium text-gray-900 dark:text-white">{t("explorations.variables")}</h3>
+                    <button onClick={() => setExplorationState(prev => ({ ...prev, view: 'gallery' }))} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                      <X size={16} />
+                    </button>
+                  </div>
+                  <div className="p-4 overflow-y-auto flex-1">
+                    <div className="mb-6">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t("explorations.dimensions")}</h4>
+                      </div>
+                      <div className="space-y-1">
+                        {availableDimensions.map(dim => (
+                          <div key={dim.id} className="flex items-center justify-between px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-sm text-gray-700 dark:text-gray-300 group">
+                            <span className="truncate">{dim.label}</span>
+                            <button 
+                              onClick={() => setExplorationState(prev => ({ ...prev, selectedDimensions: [dim.id] }))}
+                              className="opacity-0 group-hover:opacity-100 text-blue-500 hover:text-blue-600"
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t("explorations.metrics")}</h4>
+                      </div>
+                      <div className="space-y-1">
+                        {availableMetrics.map(met => (
+                          <div key={met.id} className="flex items-center justify-between px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-sm text-gray-700 dark:text-gray-300 group">
+                            <span className="truncate">{met.label}</span>
+                            <button 
+                              onClick={() => setExplorationState(prev => ({ ...prev, selectedMetrics: [met.id] }))}
+                              className="opacity-0 group-hover:opacity-100 text-blue-500 hover:text-blue-600"
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              );
-            })()}
+
+                {/* Tab Settings Column */}
+                <div className="w-64 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden shrink-0">
+                  <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                    <h3 className="font-medium text-gray-900 dark:text-white">{t("explorations.tab_settings")}</h3>
+                  </div>
+                  <div className="p-4 overflow-y-auto flex-1 space-y-6">
+                    <div>
+                      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t("explorations.visualization")}</h4>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => setExplorationState(prev => ({ ...prev, visualization: 'table' }))}
+                          className={`p-2 rounded-md ${explorationState.visualization === 'table' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                          title={t("explorations.table")}
+                        >
+                          <Table size={18} />
+                        </button>
+                        <button 
+                          onClick={() => setExplorationState(prev => ({ ...prev, visualization: 'donut' }))}
+                          className={`p-2 rounded-md ${explorationState.visualization === 'donut' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                          title={t("explorations.donut")}
+                        >
+                          <PieChartIcon size={18} />
+                        </button>
+                        <button 
+                          onClick={() => setExplorationState(prev => ({ ...prev, visualization: 'line' }))}
+                          className={`p-2 rounded-md ${explorationState.visualization === 'line' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                          title={t("explorations.line")}
+                        >
+                          <LineChartIcon size={18} />
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t("explorations.rows")}</h4>
+                      <div className="min-h-[40px] border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-md p-2 flex flex-col gap-2">
+                        {explorationState.selectedDimensions.length > 0 ? (
+                          explorationState.selectedDimensions.map(dimId => {
+                            const dim = availableDimensions.find(d => d.id === dimId);
+                            return (
+                              <div key={dimId} className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-2 py-1 rounded text-sm flex justify-between items-center border border-green-200 dark:border-green-800">
+                                {dim?.label}
+                                <button onClick={() => setExplorationState(prev => ({ ...prev, selectedDimensions: [] }))}><X size={14} /></button>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <span className="text-sm text-gray-400 text-center py-1">{t("explorations.drop_dimension")}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t("explorations.values")}</h4>
+                      <div className="min-h-[40px] border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-md p-2 flex flex-col gap-2">
+                        {explorationState.selectedMetrics.length > 0 ? (
+                          explorationState.selectedMetrics.map(metId => {
+                            const met = availableMetrics.find(m => m.id === metId);
+                            return (
+                              <div key={metId} className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-2 py-1 rounded text-sm flex justify-between items-center border border-blue-200 dark:border-blue-800">
+                                {met?.label}
+                                <button onClick={() => setExplorationState(prev => ({ ...prev, selectedMetrics: [] }))}><X size={14} /></button>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <span className="text-sm text-gray-400 text-center py-1">{t("explorations.drop_metric")}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Canvas Area */}
+                <div className="flex-1 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
+                  <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex items-center gap-2">
+                    <input 
+                      type="text" 
+                      value={explorationState.name}
+                      onChange={(e) => setExplorationState(prev => ({ ...prev, name: e.target.value }))}
+                      className="bg-transparent border-none focus:ring-0 text-lg font-medium text-gray-900 dark:text-white p-0 w-full"
+                    />
+                    <Edit2 size={16} className="text-gray-400" />
+                  </div>
+                  <div className="flex-1 p-6 overflow-auto">
+                    {explorationState.selectedDimensions.length === 0 || explorationState.selectedMetrics.length === 0 ? (
+                      <div className="h-full flex flex-col items-center justify-center text-gray-400">
+                        <Table size={48} className="mb-4 opacity-20" />
+                        <p>{t("explorations.no_data")}</p>
+                      </div>
+                    ) : (
+                      <div className="h-full">
+                        {(() => {
+                          const data = generateExplorationData();
+                          const dimLabel = availableDimensions.find(d => d.id === explorationState.selectedDimensions[0])?.label;
+                          const metLabel = availableMetrics.find(m => m.id === explorationState.selectedMetrics[0])?.label;
+
+                          if (explorationState.visualization === 'table') {
+                            return (
+                              <table className="w-full text-left border-collapse">
+                                <thead>
+                                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                                    <th className="py-3 px-4 font-semibold text-gray-900 dark:text-white">{dimLabel}</th>
+                                    <th className="py-3 px-4 font-semibold text-gray-900 dark:text-white text-right">{metLabel}</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {data.map((row, i) => (
+                                    <tr key={i} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                      <td className="py-3 px-4 text-gray-700 dark:text-gray-300">{row.name}</td>
+                                      <td className="py-3 px-4 text-gray-900 dark:text-white font-medium text-right">{row.value}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            );
+                          } else if (explorationState.visualization === 'donut') {
+                            return (
+                              <div className="h-full min-h-[400px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <PieChart>
+                                    <Pie
+                                      data={data}
+                                      cx="50%"
+                                      cy="50%"
+                                      innerRadius={80}
+                                      outerRadius={120}
+                                      paddingAngle={2}
+                                      dataKey="value"
+                                      nameKey="name"
+                                    >
+                                      {data.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                      ))}
+                                    </Pie>
+                                    <Tooltip 
+                                      contentStyle={{ backgroundColor: isDarkMode ? '#1f2937' : '#ffffff', borderColor: isDarkMode ? '#374151' : '#e5e7eb', color: isDarkMode ? '#f3f4f6' : '#111827' }}
+                                      itemStyle={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}
+                                    />
+                                  </PieChart>
+                                </ResponsiveContainer>
+                              </div>
+                            );
+                          } else if (explorationState.visualization === 'line') {
+                            return (
+                              <div className="h-full min-h-[400px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <LineChart data={data}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#374151' : '#e5e7eb'} vertical={false} />
+                                    <XAxis dataKey="name" stroke={isDarkMode ? '#9ca3af' : '#6b7280'} fontSize={12} tickLine={false} axisLine={false} />
+                                    <YAxis stroke={isDarkMode ? '#9ca3af' : '#6b7280'} fontSize={12} tickLine={false} axisLine={false} />
+                                    <Tooltip 
+                                      contentStyle={{ backgroundColor: isDarkMode ? '#1f2937' : '#ffffff', borderColor: isDarkMode ? '#374151' : '#e5e7eb', color: isDarkMode ? '#f3f4f6' : '#111827' }}
+                                      itemStyle={{ color: isDarkMode ? '#f3f4f6' : '#111827' }}
+                                    />
+                                    <Line type="monotone" dataKey="value" name={metLabel} stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                                  </LineChart>
+                                </ResponsiveContainer>
+                              </div>
+                            );
+                          }
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'ai_analytics' && (
+          <div className="space-y-6 flex flex-col h-[calc(100vh-12rem)]">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2 shrink-0">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Sparkles className="text-purple-500" />
+                  {t("ai_analytics.title")}
+                </h1>
+                <p className="text-gray-500 dark:text-gray-400 mt-1">
+                  {t("ai_analytics.description")}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex-1 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col transition-colors duration-200">
+              {/* Chat Messages Area */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {chatMessages.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-6">
+                    <Sparkles size={48} className="text-purple-300 dark:text-purple-900/50 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t("ai_analytics.title")}</h3>
+                    <p className="text-gray-500 dark:text-gray-400 max-w-md mb-6">
+                      {t("ai_analytics.description")}
+                    </p>
+                    <button
+                      onClick={() => startInitialAnalysis()}
+                      disabled={isAnalyzing || events.length === 0}
+                      className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-full font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {isAnalyzing ? (
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <Sparkles size={20} />
+                      )}
+                      {t("ai_analytics.start_chat")}
+                    </button>
+                    {events.length === 0 && (
+                      <p className="text-sm text-red-500 mt-4">{t("overview.no_data")}</p>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    {chatMessages.map((msg, idx) => (
+                      <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.role === 'user' ? 'bg-purple-600 text-white rounded-tr-sm' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-tl-sm'}`}>
+                          {msg.role === 'model' ? (
+                            <div className="prose dark:prose-invert max-w-none prose-sm">
+                              {/* Simple markdown render */}
+                              {msg.content.split('\\n').map((line, i) => {
+                                if (line.startsWith('### ')) return <h4 key={i} className="font-bold mt-2 mb-1">{line.replace('### ', '')}</h4>;
+                                if (line.startsWith('## ')) return <h3 key={i} className="font-bold mt-3 mb-2">{line.replace('## ', '')}</h3>;
+                                if (line.startsWith('# ')) return <h2 key={i} className="font-bold mt-4 mb-2">{line.replace('# ', '')}</h2>;
+                                if (line.startsWith('- ') || line.startsWith('* ')) return <li key={i} className="ml-4">{line.substring(2)}</li>;
+                                if (line.trim() === '') return <br key={i} />;
+                                // bold text parsing
+                                const parts = line.split(/(\\*\\*.*?\\*\\*)/g);
+                                return <p key={i} className="mb-1">
+                                  {parts.map((part, j) => 
+                                    part.startsWith('**') && part.endsWith('**') 
+                                      ? <strong key={j}>{part.slice(2, -2)}</strong> 
+                                      : part
+                                  )}
+                                </p>;
+                              })}
+                            </div>
+                          ) : (
+                            <p>{msg.content}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {isAnalyzing && (
+                      <div className="flex justify-start">
+                        <div className="bg-gray-100 dark:bg-gray-700 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-2">
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Input Area */}
+              {chatMessages.length > 0 && (
+                <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                  {aiError && (
+                    <div className="mb-3 text-sm text-red-600 dark:text-red-400">
+                      {aiError}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                      placeholder={t("ai_analytics.placeholder")}
+                      className="flex-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                      disabled={isAnalyzing}
+                    />
+                    <button
+                      onClick={() => handleSendMessage()}
+                      disabled={isAnalyzing || !chatInput.trim()}
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {t("ai_analytics.send")}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'notifications' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Bell className="text-blue-500" />
+                  {t("nav.notifications")}
+                </h1>
+                <p className="text-gray-500 dark:text-gray-400 mt-1">
+                  Configure email alerts for important events and metric changes.
+                </p>
+              </div>
+              <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors flex items-center gap-2">
+                <Plus size={16} />
+                Create Alert
+              </button>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+              <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Active Alerts</h3>
+              </div>
+              <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                <div className="p-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <div>
+                    <h4 className="font-medium text-gray-900 dark:text-white">Traffic Drop Alert</h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Send email when active users drop by 20% in 1 hour</p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="px-2.5 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-medium rounded-full">Active</span>
+                    <button className="text-gray-400 hover:text-blue-600 transition-colors"><Edit2 size={16} /></button>
+                  </div>
+                </div>
+                <div className="p-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <div>
+                    <h4 className="font-medium text-gray-900 dark:text-white">Goal Completion</h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Send email when daily purchases exceed 100</p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="px-2.5 py-1 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 text-xs font-medium rounded-full">Paused</span>
+                    <button className="text-gray-400 hover:text-blue-600 transition-colors"><Edit2 size={16} /></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'audit_log' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <History className="text-blue-500" />
+                  {t("nav.audit_log")}
+                </h1>
+                <p className="text-gray-500 dark:text-gray-400 mt-1">
+                  Track user actions, report changes, and system events.
+                </p>
+              </div>
+              <button className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md font-medium transition-colors flex items-center gap-2">
+                <FileDown size={16} />
+                Export Log
+              </button>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">
+                      <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date & Time</th>
+                      <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">User</th>
+                      <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Action</th>
+                      <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <td className="p-4 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{format(now, 'MMM dd, yyyy HH:mm:ss')}</td>
+                      <td className="p-4 text-sm font-medium text-gray-900 dark:text-white">Admin User</td>
+                      <td className="p-4 text-sm text-gray-900 dark:text-white"><span className="px-2 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded text-xs font-medium">Report Edited</span></td>
+                      <td className="p-4 text-sm text-gray-500 dark:text-gray-400">Added "Total Revenue" widget to Sales template</td>
+                    </tr>
+                    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <td className="p-4 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{format(subDays(now, 1), 'MMM dd, yyyy HH:mm:ss')}</td>
+                      <td className="p-4 text-sm font-medium text-gray-900 dark:text-white">Admin User</td>
+                      <td className="p-4 text-sm text-gray-900 dark:text-white"><span className="px-2 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded text-xs font-medium">Alert Created</span></td>
+                      <td className="p-4 text-sm text-gray-500 dark:text-gray-400">Created "Traffic Drop Alert" notification</td>
+                    </tr>
+                    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <td className="p-4 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{format(subDays(now, 2), 'MMM dd, yyyy HH:mm:ss')}</td>
+                      <td className="p-4 text-sm font-medium text-gray-900 dark:text-white">System</td>
+                      <td className="p-4 text-sm text-gray-900 dark:text-white"><span className="px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded text-xs font-medium">Login</span></td>
+                      <td className="p-4 text-sm text-gray-500 dark:text-gray-400">Successful login via Google Auth</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
 

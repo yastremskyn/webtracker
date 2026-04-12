@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
@@ -5,6 +6,7 @@ import { fileURLToPath } from 'url';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
 import fs from 'fs';
+import { GoogleGenAI } from '@google/genai';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -61,6 +63,33 @@ async function startServer() {
     } catch (error) {
       console.error('Error tracking event:', error);
       res.status(500).json({ error: 'Failed to track event' });
+    }
+  });
+
+  // Chat API Endpoint
+  app.post('/api/chat', async (req, res) => {
+    try {
+      const { messages, systemInstruction } = req.body;
+      
+      if (!process.env.GEMINI_API_KEY) {
+        return res.status(500).json({ error: 'GEMINI_API_KEY is not configured on the server.' });
+      }
+
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [
+          { role: 'user', parts: [{ text: systemInstruction }] },
+          { role: 'model', parts: [{ text: 'Understood. I will act as the analytics assistant and use this data.' }] },
+          ...messages
+        ],
+      });
+
+      res.status(200).json({ text: response.text });
+    } catch (error) {
+      console.error('Error in chat API:', error);
+      res.status(500).json({ error: 'Failed to generate AI response' });
     }
   });
 
