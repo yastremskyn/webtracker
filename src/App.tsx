@@ -22,10 +22,25 @@ countries.registerLocale(ukLocale);
 
 function getFlagEmoji(countryCode: string) {
   if (!countryCode) return '';
+  
+  // For Windows compatibility, we can return the country code itself
+  // if the emoji flag doesn't render properly, or use a fallback.
+  // But standard emoji flags are generated like this:
   const codePoints = countryCode
     .toUpperCase()
     .split('')
     .map(char => 127397 + char.charCodeAt(0));
+  
+  // Check if we are on Windows (where flag emojis often don't render)
+  const isWindows = typeof window !== 'undefined' && navigator.userAgent.indexOf('Win') > -1;
+  
+  if (isWindows) {
+    // Windows doesn't support country flag emojis natively.
+    // We can either return the ISO code (e.g. "UA") or an empty string
+    // Let's return the ISO code so the user sees something meaningful
+    return countryCode.toUpperCase();
+  }
+  
   return String.fromCodePoint(...codePoints);
 }
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -499,8 +514,8 @@ export default function App() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center p-4 transition-colors duration-200">
         <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 text-center space-y-6 border border-transparent dark:border-gray-700">
-          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mx-auto">
-            <Activity size={32} />
+          <div className="w-16 h-16 flex items-center justify-center mx-auto">
+            <img src="/logo.svg" alt="UWebAnalytics Logo" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("login.title")}</h1>
           <p className="text-gray-500 dark:text-gray-400">
@@ -528,8 +543,8 @@ export default function App() {
               className="flex items-center gap-2 text-blue-600 dark:text-blue-400 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => setActiveTab('overview')}
             >
-              <Activity size={24} />
-              <span className="font-bold text-xl hidden sm:block text-gray-900 dark:text-white">WebAnalytics Pro</span>
+              <img src="/logo.svg" alt="UWebAnalytics Logo" className="h-8 w-auto" />
+              <span className="font-bold text-xl hidden sm:block text-gray-900 dark:text-white">UWebAnalytics</span>
             </div>
             <nav className="hidden md:flex items-center gap-2">
               <button
@@ -1199,7 +1214,15 @@ export default function App() {
                   }}
                 >
                   <div className="flex items-center gap-2 font-medium">
-                    <span className="text-lg leading-none">{tooltipContent.flag}</span>
+                    {tooltipContent.flag.length === 2 ? (
+                      <img 
+                        src={`https://flagcdn.com/24x18/${tooltipContent.flag.toLowerCase()}.png`} 
+                        alt={tooltipContent.flag} 
+                        className="w-6 h-auto rounded-sm"
+                      />
+                    ) : (
+                      <span className="text-lg leading-none">{tooltipContent.flag}</span>
+                    )}
                     <span>{tooltipContent.name}</span>
                   </div>
                   <div className="text-gray-300 text-xs flex justify-between items-center gap-4">
@@ -1712,8 +1735,8 @@ export default function App() {
       <footer className="w-full border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 py-6 mt-auto transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-            <Activity size={18} />
-            <span className="font-semibold">WebAnalytics Pro</span>
+            <img src="/logo.svg" alt="UWebAnalytics Logo" className="h-5 w-auto grayscale opacity-70" />
+            <span className="font-semibold">UWebAnalytics</span>
           </div>
           <div className="text-sm text-gray-500 dark:text-gray-400">
             &copy; {new Date().getFullYear()} {t("footer.rights")}
