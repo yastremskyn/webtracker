@@ -3,7 +3,13 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/
 import { getFirestore } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
-const app = initializeApp(firebaseConfig);
+// Use the current domain for auth to bypass ISP blocks on firebaseapp.com
+const config = {
+  ...firebaseConfig,
+  authDomain: typeof window !== 'undefined' ? window.location.host : firebaseConfig.authDomain
+};
+
+const app = initializeApp(config);
 export const auth = getAuth(app);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
