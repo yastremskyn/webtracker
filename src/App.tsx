@@ -46,6 +46,7 @@ function getFlagEmoji(countryCode: string) {
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import Markdown from 'react-markdown';
 
 // Using an older version of world-atlas (Natural Earth) where Crimea is correctly shown as Ukraine
 const geoUrl = "https://unpkg.com/world-atlas@1.1.4/world/110m.json";
@@ -1547,24 +1548,8 @@ export default function App() {
                       <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.role === 'user' ? 'bg-purple-600 text-white rounded-tr-sm' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-tl-sm'}`}>
                           {msg.role === 'model' ? (
-                            <div className="prose dark:prose-invert max-w-none prose-sm">
-                              {/* Simple markdown render */}
-                              {msg.content.split('\\n').map((line, i) => {
-                                if (line.startsWith('### ')) return <h4 key={i} className="font-bold mt-2 mb-1">{line.replace('### ', '')}</h4>;
-                                if (line.startsWith('## ')) return <h3 key={i} className="font-bold mt-3 mb-2">{line.replace('## ', '')}</h3>;
-                                if (line.startsWith('# ')) return <h2 key={i} className="font-bold mt-4 mb-2">{line.replace('# ', '')}</h2>;
-                                if (line.startsWith('- ') || line.startsWith('* ')) return <li key={i} className="ml-4">{line.substring(2)}</li>;
-                                if (line.trim() === '') return <br key={i} />;
-                                // bold text parsing
-                                const parts = line.split(/(\\*\\*.*?\\*\\*)/g);
-                                return <p key={i} className="mb-1">
-                                  {parts.map((part, j) => 
-                                    part.startsWith('**') && part.endsWith('**') 
-                                      ? <strong key={j}>{part.slice(2, -2)}</strong> 
-                                      : part
-                                  )}
-                                </p>;
-                              })}
+                            <div className="prose dark:prose-invert max-w-none prose-sm markdown-body">
+                              <Markdown>{msg.content}</Markdown>
                             </div>
                           ) : (
                             <p>{msg.content}</p>
