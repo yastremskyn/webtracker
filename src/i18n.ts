@@ -23,7 +23,8 @@ const resources = {
         export_pdf: "Export to PDF",
         notifications: "Email Notifications",
         audit_log: "Audit Log",
-        logout: "Logout"
+        logout: "Logout",
+        change_language: "Change language"
       },
       theme: {
         light: "Switch to light theme",
@@ -152,6 +153,32 @@ const resources = {
         line: "Line",
         no_data: "Please select at least one dimension and one metric to generate the report."
       },
+      notifications: {
+        title: "Email Notifications",
+        desc: "Manage your automated email alerts and reports.",
+        test_email: "Send Test Email",
+        create_alert: "Create Alert",
+        active_alerts: "Active Alerts",
+        traffic_drop: "Traffic Drop Alert",
+        traffic_drop_desc: "Send email when active users drop by 20% in 1 hour",
+        goal_completion: "Goal Completion",
+        goal_completion_desc: "Send email when daily purchases exceed 100",
+        active: "Active",
+        paused: "Paused",
+        test_success: "Test email sent successfully! Check your inbox.",
+        test_error: "Error: ",
+        test_network_error: "Failed to send. Check your connection."
+      },
+      audit_log: {
+        title: "Audit Log",
+        desc: "Track user actions, report changes, and system events.",
+        export: "Export Log",
+        date_time: "Date & Time",
+        user: "User",
+        action: "Action",
+        details: "Details",
+        no_logs: "No audit logs found."
+      },
       footer: {
         rights: "All rights reserved."
       }
@@ -178,7 +205,8 @@ const resources = {
         export_pdf: "Експорт у PDF",
         notifications: "Сповіщення на email",
         audit_log: "Журнал аудиту",
-        logout: "Вийти"
+        logout: "Вийти",
+        change_language: "Змінити мову"
       },
       theme: {
         light: "Увімкнути світлу тему",
@@ -306,6 +334,32 @@ const resources = {
         donut: "Кільцева діаграма",
         line: "Лінійний графік",
         no_data: "Будь ласка, виберіть принаймні один параметр і один показник для створення звіту."
+      },
+      notifications: {
+        title: "Сповіщення на email",
+        desc: "Керуйте автоматичними сповіщеннями та звітами на email.",
+        test_email: "Відправити тестовий лист",
+        create_alert: "Створити сповіщення",
+        active_alerts: "Активні сповіщення",
+        traffic_drop: "Сповіщення про падіння трафіку",
+        traffic_drop_desc: "Надіслати email, коли кількість активних користувачів падає на 20% за 1 годину",
+        goal_completion: "Досягнення цілі",
+        goal_completion_desc: "Надіслати email, коли щоденні покупки перевищують 100",
+        active: "Активно",
+        paused: "Призупинено",
+        test_success: "Тестовий лист успішно відправлено! Перевірте вашу пошту.",
+        test_error: "Помилка: ",
+        test_network_error: "Помилка відправки. Перевірте з'єднання."
+      },
+      audit_log: {
+        title: "Журнал аудиту",
+        desc: "Відстежуйте дії користувачів, зміни у звітах та системні події.",
+        export: "Експорт журналу",
+        date_time: "Дата та час",
+        user: "Користувач",
+        action: "Дія",
+        details: "Деталі",
+        no_logs: "Журнал аудиту порожній."
       },
       footer: {
         rights: "Всі права захищено."

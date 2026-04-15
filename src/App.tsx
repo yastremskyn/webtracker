@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import './i18n';
-import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, limit, addDoc } from 'firebase/firestore';
 import { db, auth, loginWithGoogle, logout } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
@@ -21,27 +21,17 @@ countries.registerLocale(enLocale);
 countries.registerLocale(ukLocale);
 
 function getFlagEmoji(countryCode: string) {
-  if (!countryCode) return '';
-  
-  // For Windows compatibility, we can return the country code itself
-  // if the emoji flag doesn't render properly, or use a fallback.
-  // But standard emoji flags are generated like this:
-  const codePoints = countryCode
-    .toUpperCase()
-    .split('')
-    .map(char => 127397 + char.charCodeAt(0));
-  
-  // Check if we are on Windows (where flag emojis often don't render)
-  const isWindows = typeof window !== 'undefined' && navigator.userAgent.indexOf('Win') > -1;
-  
-  if (isWindows) {
-    // Windows doesn't support country flag emojis natively.
-    // We can either return the ISO code (e.g. "UA") or an empty string
-    // Let's return the ISO code so the user sees something meaningful
-    return countryCode.toUpperCase();
-  }
-  
-  return String.fromCodePoint(...codePoints);
+  if (!countryCode) return null;
+  return (
+    <img 
+      src={`https://flagcdn.com/w20/${countryCode.toLowerCase()}.png`} 
+      srcSet={`https://flagcdn.com/w40/${countryCode.toLowerCase()}.png 2x`}
+      width="20" 
+      alt={countryCode} 
+      className="inline-block rounded-sm shadow-sm"
+      referrerPolicy="no-referrer"
+    />
+  );
 }
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -124,10 +114,19 @@ interface AnalyticsEvent {
   userEmail?: string;
 }
 
+interface AuditLog {
+  id: string;
+  timestamp: string;
+  userEmail: string;
+  action: string;
+  details: string;
+}
+
 export default function App() {
   const { t, i18n } = useTranslation();
   const [user, setUser] = useState<User | null>(null);
   const [events, setEvents] = useState<AnalyticsEvent[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(new Date());
   const [activeTab, setActiveTab] = useState<'overview' | 'reports' | 'realtime' | 'explorations' | 'ai_analytics' | 'notifications' | 'audit_log'>('overview');
@@ -145,7 +144,7 @@ export default function App() {
   const [chatInput, setChatInput] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-  const [tooltipContent, setTooltipContent] = useState<{name: string, flag: string, users: number, x: number, y: number} | null>(null);
+  const [tooltipContent, setTooltipContent] = useState<{name: string, flag: React.ReactNode, users: number, x: number, y: number} | null>(null);
 
   // Explorations state
   const [explorationState, setExplorationState] = useState<{
@@ -201,6 +200,33 @@ export default function App() {
     })).sort((a, b) => b.value - a.value).slice(0, 15);
   };
 
+  const logAuditAction = async (action: string, details: string) => {
+    if (!auth.currentUser) return;
+    try {
+      await addDoc(collection(db, 'audit_logs'), {
+        timestamp: new Date().toISOString(),
+        userEmail: auth.currentUser.email || 'Unknown',
+        action,
+        details
+      });
+    } catch (error) {
+      console.error("Failed to log audit action:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    const q = query(collection(db, 'audit_logs'), orderBy('timestamp', 'desc'), limit(50));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const logs: AuditLog[] = [];
+      snapshot.forEach((doc) => {
+        logs.push({ id: doc.id, ...doc.data() } as AuditLog);
+      });
+      setAuditLogs(logs);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -236,6 +262,7 @@ export default function App() {
     } else if (templateId === 'marketing') {
       setWidgets(getInitialMarketingWidgets());
     }
+    logAuditAction('Template Changed', `User switched to ${templateId} report template`);
   };
 
   const handleTestEmail = async () => {
@@ -248,12 +275,13 @@ export default function App() {
       });
       const data = await res.json();
       if (data.success) {
-        alert('Тестовий лист успішно відправлено! Перевірте вашу пошту.');
+        logAuditAction('Test Email Sent', 'User triggered a test email alert');
+        alert(t("notifications.test_success"));
       } else {
-        alert('Помилка: ' + data.error);
+        alert(t("notifications.test_error") + data.error);
       }
     } catch (e) {
-      alert('Помилка відправки. Перевірте з\'єднання.');
+      alert(t("notifications.test_network_error"));
     }
     setIsSendingTest(false);
   };
@@ -261,6 +289,8 @@ export default function App() {
   const handleSendMessage = async (messageText?: string) => {
     const textToSend = messageText || chatInput;
     if (!textToSend.trim()) return;
+
+    logAuditAction('AI Chat', `User sent a message to AI Assistant: "${textToSend.substring(0, 30)}..."`);
 
     const newUserMsg: ChatMessage = { role: 'user', content: textToSend };
     setChatMessages(prev => [...prev, newUserMsg]);
@@ -373,13 +403,23 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      const isFirstLogin = !user && currentUser;
       setUser(currentUser);
       if (!currentUser) {
         setLoading(false);
+      } else if (isFirstLogin) {
+        // We can't use logAuditAction directly here if it depends on auth.currentUser being fully set in state,
+        // but auth.currentUser is set synchronously by Firebase.
+        addDoc(collection(db, 'audit_logs'), {
+          timestamp: new Date().toISOString(),
+          userEmail: currentUser.email || 'Unknown',
+          action: 'User Login',
+          details: 'User logged into the dashboard'
+        }).catch(console.error);
       }
     });
     return () => unsubscribeAuth();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -523,7 +563,15 @@ export default function App() {
             {t("login.subtitle")}
           </p>
           <button
-            onClick={loginWithGoogle}
+            onClick={async () => {
+              try {
+                await loginWithGoogle();
+                // Note: The actual logging will happen in onAuthStateChanged or we can log it here if we want, but auth.currentUser might not be set immediately.
+                // Let's log it in a useEffect that watches `user` state.
+              } catch (e) {
+                console.error(e);
+              }
+            }}
             className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition-colors"
           >
             <LogIn size={20} />
@@ -639,32 +687,32 @@ export default function App() {
             <div className="relative">
               <button
                 onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
-                className="flex items-center gap-1 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+                className="flex items-center gap-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
                 title="Change language"
               >
-                <Globe size={16} />
+                <span className="text-base leading-none">{i18n.language === 'en' ? getFlagEmoji('GB') : getFlagEmoji('UA')}</span>
                 <span className="uppercase">{i18n.language}</span>
                 <ChevronDown size={14} className={`transition-transform ${isLangMenuOpen ? 'rotate-180' : ''}`} />
               </button>
               {isLangMenuOpen && (
-                <div className="absolute top-full right-0 mt-2 w-32 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+                <div className="absolute top-full right-0 mt-2 w-24 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
                   <button
                     onClick={() => {
                       i18n.changeLanguage('en');
                       setIsLangMenuOpen(false);
                     }}
-                    className={`w-full text-left px-4 py-2 text-sm ${i18n.language === 'en' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                    className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${i18n.language === 'en' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                   >
-                    English
+                    <span className="text-base leading-none">{getFlagEmoji('GB')}</span> EN
                   </button>
                   <button
                     onClick={() => {
                       i18n.changeLanguage('uk');
                       setIsLangMenuOpen(false);
                     }}
-                    className={`w-full text-left px-4 py-2 text-sm ${i18n.language === 'uk' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                    className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${i18n.language === 'uk' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                   >
-                    Українська
+                    <span className="text-base leading-none">{getFlagEmoji('UA')}</span> UK
                   </button>
                 </div>
               )}
@@ -676,7 +724,7 @@ export default function App() {
               className="relative inline-flex h-8 w-14 items-center rounded-full bg-gray-200 dark:bg-gray-700 transition-colors focus:outline-none"
               title={isDarkMode ? t("theme.light") : t("theme.dark")}
             >
-              <span className="sr-only">Toggle dark mode</span>
+              <span className="sr-only">{isDarkMode ? t("theme.light") : t("theme.dark")}</span>
               <span
                 className={`${
                   isDarkMode ? 'translate-x-7 bg-gray-800' : 'translate-x-1 bg-white'
@@ -839,7 +887,10 @@ export default function App() {
                     lat: 50.4501, // Kyiv latitude
                     lng: 30.5234  // Kyiv longitude
                   })
-                }).then(() => alert(t("overview.test_alert")));
+                }).then(() => {
+                  logAuditAction('Test Event Fired', 'User sent a test page_view event');
+                  alert(t("overview.test_alert"));
+                });
               }}
               className="text-sm bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded transition-colors"
             >
@@ -963,7 +1014,12 @@ export default function App() {
                       </div>
                     )}
                     <button 
-                      onClick={() => setIsEditMode(!isEditMode)}
+                      onClick={() => {
+                        if (isEditMode) {
+                          logAuditAction('Dashboard Updated', 'User saved changes to the dashboard layout');
+                        }
+                        setIsEditMode(!isEditMode);
+                      }}
                       className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                         isEditMode 
                           ? 'bg-blue-600 text-white hover:bg-blue-700' 
@@ -1611,7 +1667,7 @@ export default function App() {
                   {t("nav.notifications")}
                 </h1>
                 <p className="text-gray-500 dark:text-gray-400 mt-1">
-                  Configure email alerts for important events and metric changes.
+                  {t("notifications.desc")}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -1620,37 +1676,37 @@ export default function App() {
                   disabled={isSendingTest}
                   className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
                 >
-                  {isSendingTest ? 'Відправка...' : 'Тестовий лист'}
+                  {isSendingTest ? '...' : t("notifications.test_email")}
                 </button>
                 <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors flex items-center gap-2">
                   <Plus size={16} />
-                  Create Alert
+                  {t("notifications.create_alert")}
                 </button>
               </div>
             </div>
 
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
               <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Active Alerts</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t("notifications.active_alerts")}</h3>
               </div>
               <div className="divide-y divide-gray-100 dark:divide-gray-700">
                 <div className="p-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                   <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white">Traffic Drop Alert</h4>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Send email when active users drop by 20% in 1 hour</p>
+                    <h4 className="font-medium text-gray-900 dark:text-white">{t("notifications.traffic_drop")}</h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t("notifications.traffic_drop_desc")}</p>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className="px-2.5 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-medium rounded-full">Active</span>
+                    <span className="px-2.5 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-medium rounded-full">{t("notifications.active")}</span>
                     <button className="text-gray-400 hover:text-blue-600 transition-colors"><Edit2 size={16} /></button>
                   </div>
                 </div>
                 <div className="p-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                   <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white">Goal Completion</h4>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Send email when daily purchases exceed 100</p>
+                    <h4 className="font-medium text-gray-900 dark:text-white">{t("notifications.goal_completion")}</h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t("notifications.goal_completion_desc")}</p>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className="px-2.5 py-1 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 text-xs font-medium rounded-full">Paused</span>
+                    <span className="px-2.5 py-1 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 text-xs font-medium rounded-full">{t("notifications.paused")}</span>
                     <button className="text-gray-400 hover:text-blue-600 transition-colors"><Edit2 size={16} /></button>
                   </div>
                 </div>
@@ -1668,12 +1724,12 @@ export default function App() {
                   {t("nav.audit_log")}
                 </h1>
                 <p className="text-gray-500 dark:text-gray-400 mt-1">
-                  Track user actions, report changes, and system events.
+                  {t("audit_log.desc")}
                 </p>
               </div>
               <button className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md font-medium transition-colors flex items-center gap-2">
                 <FileDown size={16} />
-                Export Log
+                {t("audit_log.export")}
               </button>
             </div>
 
@@ -1682,31 +1738,35 @@ export default function App() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">
-                      <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date & Time</th>
-                      <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">User</th>
-                      <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Action</th>
-                      <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Details</th>
+                      <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t("audit_log.date_time")}</th>
+                      <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t("audit_log.user")}</th>
+                      <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t("audit_log.action")}</th>
+                      <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t("audit_log.details")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                      <td className="p-4 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{format(now, 'MMM dd, yyyy HH:mm:ss')}</td>
-                      <td className="p-4 text-sm font-medium text-gray-900 dark:text-white">Admin User</td>
-                      <td className="p-4 text-sm text-gray-900 dark:text-white"><span className="px-2 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded text-xs font-medium">Report Edited</span></td>
-                      <td className="p-4 text-sm text-gray-500 dark:text-gray-400">Added "Total Revenue" widget to Sales template</td>
-                    </tr>
-                    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                      <td className="p-4 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{format(subDays(now, 1), 'MMM dd, yyyy HH:mm:ss')}</td>
-                      <td className="p-4 text-sm font-medium text-gray-900 dark:text-white">Admin User</td>
-                      <td className="p-4 text-sm text-gray-900 dark:text-white"><span className="px-2 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded text-xs font-medium">Alert Created</span></td>
-                      <td className="p-4 text-sm text-gray-500 dark:text-gray-400">Created "Traffic Drop Alert" notification</td>
-                    </tr>
-                    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                      <td className="p-4 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{format(subDays(now, 2), 'MMM dd, yyyy HH:mm:ss')}</td>
-                      <td className="p-4 text-sm font-medium text-gray-900 dark:text-white">System</td>
-                      <td className="p-4 text-sm text-gray-900 dark:text-white"><span className="px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded text-xs font-medium">Login</span></td>
-                      <td className="p-4 text-sm text-gray-500 dark:text-gray-400">Successful login via Google Auth</td>
-                    </tr>
+                    {auditLogs.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                          {t("audit_log.no_logs")}
+                        </td>
+                      </tr>
+                    ) : (
+                      auditLogs.map((log) => (
+                        <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                          <td className="p-4 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                            {format(new Date(log.timestamp), 'MMM dd, yyyy HH:mm:ss')}
+                          </td>
+                          <td className="p-4 text-sm font-medium text-gray-900 dark:text-white">{log.userEmail}</td>
+                          <td className="p-4 text-sm text-gray-900 dark:text-white">
+                            <span className="px-2 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded text-xs font-medium">
+                              {log.action}
+                            </span>
+                          </td>
+                          <td className="p-4 text-sm text-gray-500 dark:text-gray-400">{log.details}</td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

@@ -19,6 +19,12 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    match /audit_logs/{logId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+
     match /users/{userId} {
       // Authenticated users can read the user list
       allow read: if isAuthenticated();
