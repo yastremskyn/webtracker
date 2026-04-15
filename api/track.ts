@@ -50,8 +50,8 @@ export default async function handler(req, res) {
     await addDoc(collection(db, 'events'), eventData);
     
     res.status(200).json({ success: true, message: 'Event tracked successfully' });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error tracking event:', error);
-    res.status(500).json({ error: 'Failed to track event' });
+    res.status(500).json({ error: 'Failed to track event', details: error.message || String(error) });
   }
 }
