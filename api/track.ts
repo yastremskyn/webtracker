@@ -1,8 +1,9 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
-const firebaseApp = initializeApp(firebaseConfig);
+// Initialize Firebase only if it hasn't been initialized yet
+const firebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
 
 export default async function handler(req, res) {
