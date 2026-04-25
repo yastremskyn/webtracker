@@ -1,6 +1,8 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
-import firebaseConfig from '../firebase-applet-config.json';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const firebaseConfig = require('../firebase-applet-config.json');
 
 // Declare db variable
 let db: any;
