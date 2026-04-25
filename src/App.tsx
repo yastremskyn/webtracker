@@ -57,9 +57,9 @@ function SortableWidget({ id, children, isEditMode, onRemove, colSpan }: { id: s
   };
 
   return (
-    <div ref={setNodeRef} style={style} className={`relative bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border ${isEditMode ? 'border-blue-400 dark:border-blue-500 border-dashed' : 'border-gray-100 dark:border-gray-700'} h-full flex flex-col transition-colors duration-200`}>
+    <div ref={setNodeRef} style={style} className={`relative bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border ${isEditMode ? 'border-blue-400 dark:border-blue-500 border-dashed' : 'border-gray-100 dark:border-gray-800'} h-full flex flex-col transition-colors duration-200`}>
       {isEditMode && (
-        <div className="absolute top-2 right-2 flex items-center gap-1 z-10 bg-white dark:bg-gray-800 p-1 rounded-md shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className="absolute top-2 right-2 flex items-center gap-1 z-10 bg-white dark:bg-gray-900 p-1 rounded-md shadow-sm border border-gray-200 dark:border-gray-800">
           <button {...attributes} {...listeners} className="p-1.5 text-gray-400 hover:text-gray-900 dark:hover:text-white cursor-grab active:cursor-grabbing">
             <GripHorizontal size={16} />
           </button>
@@ -553,8 +553,8 @@ export default function App() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center p-4 transition-colors duration-200">
-        <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 text-center space-y-6 border border-transparent dark:border-gray-700">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col items-center justify-center p-4 transition-colors duration-200">
+        <div className="max-w-md w-full bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 text-center space-y-6 border border-transparent dark:border-gray-800">
           <div className="w-16 h-16 flex items-center justify-center mx-auto">
             <img src="/logo.svg" alt="UWebAnalytics Logo" className="w-full h-full object-contain" />
           </div>
@@ -583,9 +583,9 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-200">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 transition-colors duration-200">
+      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <div 
@@ -612,7 +612,7 @@ export default function App() {
                   <ChevronDown size={14} className="transition-transform group-hover:rotate-180" />
                 </button>
                 <div className="absolute top-full left-0 pt-1 w-56 z-50 hidden group-hover:block">
-                  <div className="bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 py-1">
+                  <div className="bg-white dark:bg-gray-900 rounded-md shadow-lg border border-gray-200 dark:border-gray-800 py-1">
                     <button
                       onClick={() => setActiveTab('reports')}
                       className={`w-full text-left px-4 py-2 text-sm cursor-pointer transition-colors flex items-center gap-2 ${activeTab === 'reports' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
@@ -655,7 +655,7 @@ export default function App() {
                   <ChevronDown size={14} className="transition-transform group-hover:rotate-180" />
                 </button>
                 <div className="absolute top-full left-0 pt-1 w-56 z-50 hidden group-hover:block">
-                  <div className="bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 py-1">
+                  <div className="bg-white dark:bg-gray-900 rounded-md shadow-lg border border-gray-200 dark:border-gray-800 py-1">
                     <button
                       onClick={() => window.print()}
                       className="w-full text-left px-4 py-2 text-sm cursor-pointer transition-colors flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -695,7 +695,7 @@ export default function App() {
                 <ChevronDown size={14} className={`transition-transform ${isLangMenuOpen ? 'rotate-180' : ''}`} />
               </button>
               {isLangMenuOpen && (
-                <div className="absolute top-full right-0 mt-2 w-24 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+                <div className="absolute top-full right-0 mt-2 w-24 bg-white dark:bg-gray-900 rounded-md shadow-lg border border-gray-200 dark:border-gray-800 py-1 z-50">
                   <button
                     onClick={() => {
                       i18n.changeLanguage('en');
@@ -721,7 +721,7 @@ export default function App() {
             {/* Dark Mode Toggle */}
             <button
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className="relative inline-flex h-8 w-14 items-center rounded-full bg-gray-200 dark:bg-gray-700 transition-colors focus:outline-none"
+              className="relative inline-flex h-8 w-14 items-center rounded-full bg-gray-200 dark:bg-gray-800 transition-colors focus:outline-none"
               title={isDarkMode ? t("theme.light") : t("theme.dark")}
             >
               <span className="sr-only">{isDarkMode ? t("theme.light") : t("theme.dark")}</span>
@@ -734,7 +734,7 @@ export default function App() {
               </span>
             </button>
             
-            <div className="text-sm text-gray-600 dark:text-gray-300 hidden sm:block border-l border-gray-200 dark:border-gray-700 pl-4">
+            <div className="text-sm text-gray-600 dark:text-gray-300 hidden sm:block border-l border-gray-200 dark:border-gray-800 pl-4">
               {user.email}
             </div>
             <button
@@ -754,7 +754,7 @@ export default function App() {
           <>
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4 transition-colors duration-200">
+          <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-4 transition-colors duration-200">
             <div className="p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
               <Users size={24} />
             </div>
@@ -763,7 +763,7 @@ export default function App() {
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{loading ? '...' : uniqueUsers}</p>
             </div>
           </div>
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4 transition-colors duration-200">
+          <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-4 transition-colors duration-200">
             <div className="p-3 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg">
               <Globe size={24} />
             </div>
@@ -772,7 +772,7 @@ export default function App() {
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{loading ? '...' : totalPageViews}</p>
             </div>
           </div>
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4 transition-colors duration-200">
+          <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-4 transition-colors duration-200">
             <div className="p-3 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg">
               <MousePointerClick size={24} />
             </div>
@@ -787,7 +787,7 @@ export default function App() {
           {/* Main Charts Area */}
           <div className="lg:col-span-2 space-y-8">
             {/* 7 Days Chart */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors duration-200">
+            <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 transition-colors duration-200">
               <h2 className="text-lg font-bold mb-6 text-gray-900 dark:text-white">{t("overview.activity_7_days")}</h2>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -806,7 +806,7 @@ export default function App() {
             </div>
 
             {/* Real-time Chart */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden transition-colors duration-200">
+            <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden transition-colors duration-200">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 animate-pulse"></div>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-bold flex items-center gap-2 text-gray-900 dark:text-white">
@@ -838,7 +838,7 @@ export default function App() {
           </div>
 
           {/* Top Pages */}
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors duration-200">
+          <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 transition-colors duration-200">
             <h2 className="text-lg font-bold mb-6 text-gray-900 dark:text-white">{t("overview.popular_pages")}</h2>
             <div className="space-y-4">
               {topPages.length > 0 ? topPages.map(([url, views], index) => (
@@ -847,7 +847,7 @@ export default function App() {
                     <span className="text-sm font-medium text-gray-400 w-4">{index + 1}</span>
                     <span className="text-sm text-gray-700 dark:text-gray-300 truncate" title={url}>{url || '/'}</span>
                   </div>
-                  <span className="text-sm font-semibold bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-gray-700 dark:text-gray-300">{views}</span>
+                  <span className="text-sm font-semibold bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-700 dark:text-gray-300">{views}</span>
                 </div>
               )) : (
                 <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">{t("overview.no_data")}</p>
@@ -857,7 +857,7 @@ export default function App() {
         </div>
 
         {/* Integration Guide */}
-        <div className="bg-gray-900 dark:bg-gray-950 text-white p-6 rounded-xl shadow-sm transition-colors duration-200 border border-transparent dark:border-gray-800">
+        <div className="bg-gray-900 dark:bg-black text-white p-6 rounded-xl shadow-sm transition-colors duration-200 border border-transparent dark:border-gray-900">
           <div className="flex items-center gap-3 mb-4">
             <Code className="text-blue-400" />
             <h2 className="text-lg font-bold">{t("overview.how_to_connect")}</h2>
@@ -912,17 +912,17 @@ export default function App() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Template 1 */}
-                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col transition-transform hover:scale-[1.02] duration-200">
+                  <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col transition-transform hover:scale-[1.02] duration-200">
                     <div className="p-6 flex-grow">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t("reports.template_behavior")}</h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
                         {t("reports.template_behavior_desc")}
                       </p>
-                      <div className="bg-gray-50 dark:bg-gray-900/50 h-32 rounded-lg border border-gray-100 dark:border-gray-800 flex items-center justify-center mb-4">
+                      <div className="bg-gray-50 dark:bg-gray-950/50 h-32 rounded-lg border border-gray-100 dark:border-gray-900 flex items-center justify-center mb-4">
                         <Activity size={48} className="text-blue-400 dark:text-blue-500" />
                       </div>
                     </div>
-                    <div className="p-4 border-t border-gray-100 dark:border-gray-700 space-y-2">
+                    <div className="p-4 border-t border-gray-100 dark:border-gray-800 space-y-2">
                       <button 
                         onClick={() => handleSelectTemplate('behavior')}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-medium transition-colors text-sm cursor-pointer"
@@ -933,17 +933,17 @@ export default function App() {
                   </div>
 
                   {/* Template 2 */}
-                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col transition-transform hover:scale-[1.02] duration-200">
+                  <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col transition-transform hover:scale-[1.02] duration-200">
                     <div className="p-6 flex-grow">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t("reports.template_sales")}</h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
                         {t("reports.template_sales_desc")}
                       </p>
-                      <div className="bg-gray-50 dark:bg-gray-900/50 h-32 rounded-lg border border-gray-100 dark:border-gray-800 flex items-center justify-center mb-4">
+                      <div className="bg-gray-50 dark:bg-gray-950/50 h-32 rounded-lg border border-gray-100 dark:border-gray-900 flex items-center justify-center mb-4">
                         <BarChart2 size={48} className="text-green-400 dark:text-green-500" />
                       </div>
                     </div>
-                    <div className="p-4 border-t border-gray-100 dark:border-gray-700 space-y-2">
+                    <div className="p-4 border-t border-gray-100 dark:border-gray-800 space-y-2">
                       <button 
                         onClick={() => handleSelectTemplate('sales')}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-medium transition-colors text-sm cursor-pointer"
@@ -954,17 +954,17 @@ export default function App() {
                   </div>
 
                   {/* Template 3 */}
-                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col transition-transform hover:scale-[1.02] duration-200">
+                  <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col transition-transform hover:scale-[1.02] duration-200">
                     <div className="p-6 flex-grow">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t("reports.template_marketing")}</h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
                         {t("reports.template_marketing_desc")}
                       </p>
-                      <div className="bg-gray-50 dark:bg-gray-900/50 h-32 rounded-lg border border-gray-100 dark:border-gray-800 flex items-center justify-center mb-4">
+                      <div className="bg-gray-50 dark:bg-gray-950/50 h-32 rounded-lg border border-gray-100 dark:border-gray-900 flex items-center justify-center mb-4">
                         <Globe size={48} className="text-purple-400 dark:text-purple-500" />
                       </div>
                     </div>
-                    <div className="p-4 border-t border-gray-100 dark:border-gray-700 space-y-2">
+                    <div className="p-4 border-t border-gray-100 dark:border-gray-800 space-y-2">
                       <button 
                         onClick={() => handleSelectTemplate('marketing')}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-medium transition-colors text-sm cursor-pointer"
@@ -977,7 +977,7 @@ export default function App() {
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-4">
+                <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-4">
                   <div className="flex items-center gap-4">
                     <button 
                       onClick={() => setSelectedTemplate(null)}
@@ -990,12 +990,12 @@ export default function App() {
                   <div className="flex items-center gap-3">
                     {isEditMode && (
                       <div className="relative group">
-                        <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 cursor-pointer">
+                        <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 cursor-pointer">
                           <Plus size={16} />
                           {t("reports.add_widget")}
                         </button>
                         <div className="absolute right-0 top-full pt-2 w-64 z-20 hidden group-hover:block">
-                          <div className="bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 p-2 space-y-1">
+                          <div className="bg-white dark:bg-gray-900 rounded-md shadow-lg border border-gray-200 dark:border-gray-800 p-2 space-y-1">
                             {widgets.filter(w => !w.visible).length === 0 ? (
                               <p className="text-sm text-gray-500 dark:text-gray-400 p-2 text-center">{t("reports.all_widgets_added")}</p>
                             ) : (
@@ -1023,7 +1023,7 @@ export default function App() {
                       className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                         isEditMode 
                           ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
+                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
                       }`}
                     >
                       {isEditMode ? <><Check size={16} /> {t("reports.done")}</> : <><Edit2 size={16} /> {t("reports.edit")}</>}
@@ -1032,7 +1032,7 @@ export default function App() {
                 </div>
 
                 {/* Top Metrics Row */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
                   <div>
                     <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{t("overview.active_users")}</h3>
                     <p className="text-3xl font-bold text-gray-900 dark:text-white">{activeUsers30Mins}</p>
@@ -1067,7 +1067,7 @@ export default function App() {
                             <>
                               <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4 uppercase tracking-wider">{t(`reports.${widget.id}`)}</h3>
                               <div className="space-y-3">
-                                <div className="flex text-xs font-semibold text-gray-400 border-b border-gray-100 dark:border-gray-700 pb-2">
+                                <div className="flex text-xs font-semibold text-gray-400 border-b border-gray-100 dark:border-gray-800 pb-2">
                                   <div className="flex-1">{t("reports.top_pages")}</div>
                                   <div className="w-24 text-right">{t("reports.views_col")}</div>
                                 </div>
@@ -1131,7 +1131,7 @@ export default function App() {
                                   </ResponsiveContainer>
                                 ) : (
                                   <div className="flex flex-col items-center justify-center text-gray-400">
-                                    <div className="w-32 h-32 rounded-full border-8 border-gray-100 dark:border-gray-700 flex items-center justify-center mb-2">
+                                    <div className="w-32 h-32 rounded-full border-8 border-gray-100 dark:border-gray-800 flex items-center justify-center mb-2">
                                       <span className="text-sm font-medium">{t("overview.no_data")}</span>
                                     </div>
                                   </div>
@@ -1173,7 +1173,7 @@ export default function App() {
               </span>
             </div>
 
-            <div className="relative bg-[#e5e7eb] dark:bg-[#111827] rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden h-[600px]">
+            <div className="relative bg-[#e5e7eb] dark:bg-[#111827] rounded-xl shadow-sm border border-gray-200 dark:border-gray-900 overflow-hidden h-[600px]">
               {/* Map */}
               <div className="absolute inset-0">
                 <ComposableMap projectionConfig={{ scale: 140 }} width={800} height={400} style={{ width: "100%", height: "100%" }}>
@@ -1232,7 +1232,7 @@ export default function App() {
               </div>
 
               {/* Overlay Card */}
-              <div className="absolute bottom-6 left-6 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 w-80">
+              <div className="absolute bottom-6 left-6 bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 w-80">
                 <div className="grid grid-cols-2 gap-4 mb-6">
                   <div>
                     <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 tracking-wider">{t("realtime.users_last_30m")}</p>
@@ -1245,7 +1245,7 @@ export default function App() {
                 </div>
                 
                 <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 pb-2">{t("realtime.users_per_min")}</p>
+                  <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-200 dark:border-gray-800 pb-2">{t("realtime.users_per_min")}</p>
                   <div className="h-24 w-full pt-2">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={realTimeData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
@@ -1253,7 +1253,7 @@ export default function App() {
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="flex justify-between text-[10px] text-gray-400 border-t border-gray-200 dark:border-gray-700 pt-2">
+                  <div className="flex justify-between text-[10px] text-gray-400 border-t border-gray-200 dark:border-gray-800 pt-2">
                     <span>{t("realtime.minus_2m")}</span>
                     <span>{t("realtime.now")}</span>
                   </div>
@@ -1271,7 +1271,7 @@ export default function App() {
                   }}
                 >
                   <div className="flex items-center gap-2 font-medium">
-                    {tooltipContent.flag.length === 2 ? (
+                    {typeof tooltipContent.flag === 'string' && tooltipContent.flag.length === 2 ? (
                       <img 
                         src={`https://flagcdn.com/24x18/${tooltipContent.flag.toLowerCase()}.png`} 
                         alt={tooltipContent.flag} 
@@ -1302,35 +1302,35 @@ export default function App() {
             </div>
 
             {explorationState.view === 'gallery' ? (
-              <div className="bg-gray-50 dark:bg-gray-900/30 rounded-xl p-8 border border-gray-200 dark:border-gray-800">
+              <div className="bg-gray-50 dark:bg-gray-950/30 rounded-xl p-8 border border-gray-200 dark:border-gray-900">
                 <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-6">{t("explorations.gallery_title")}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                   <button 
                     onClick={() => setExplorationState(prev => ({ ...prev, view: 'editor', visualization: 'table' }))}
-                    className="group bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 flex flex-col items-center justify-center gap-4 hover:border-blue-500 hover:shadow-md transition-all h-48"
+                    className="group bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 flex flex-col items-center justify-center gap-4 hover:border-blue-500 hover:shadow-md transition-all h-48"
                   >
-                    <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 text-gray-400 group-hover:text-blue-500 transition-colors">
+                    <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 text-gray-400 group-hover:text-blue-500 transition-colors">
                       <Plus size={24} />
                     </div>
                     <span className="font-medium text-gray-900 dark:text-white">{t("explorations.blank")}</span>
                   </button>
                   <button 
                     onClick={() => setExplorationState(prev => ({ ...prev, view: 'editor', visualization: 'table' }))}
-                    className="group bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 flex flex-col items-center justify-center gap-4 hover:border-blue-500 hover:shadow-md transition-all h-48"
+                    className="group bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 flex flex-col items-center justify-center gap-4 hover:border-blue-500 hover:shadow-md transition-all h-48"
                   >
-                    <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 text-gray-400 group-hover:text-blue-500 transition-colors">
+                    <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 text-gray-400 group-hover:text-blue-500 transition-colors">
                       <Table size={24} />
                     </div>
                     <span className="font-medium text-gray-900 dark:text-white">{t("explorations.free_form")}</span>
                   </button>
-                  <button disabled className="opacity-50 cursor-not-allowed bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 flex flex-col items-center justify-center gap-4 h-48">
-                    <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400">
+                  <button disabled className="opacity-50 cursor-not-allowed bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 flex flex-col items-center justify-center gap-4 h-48">
+                    <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400">
                       <Filter size={24} />
                     </div>
                     <span className="font-medium text-gray-900 dark:text-white">{t("explorations.funnel")}</span>
                   </button>
-                  <button disabled className="opacity-50 cursor-not-allowed bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 flex flex-col items-center justify-center gap-4 h-48">
-                    <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400">
+                  <button disabled className="opacity-50 cursor-not-allowed bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 flex flex-col items-center justify-center gap-4 h-48">
+                    <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400">
                       <GripHorizontal size={24} />
                     </div>
                     <span className="font-medium text-gray-900 dark:text-white">{t("explorations.path")}</span>
@@ -1340,8 +1340,8 @@ export default function App() {
             ) : (
               <div className="flex-1 flex gap-4 overflow-hidden">
                 {/* Variables Column */}
-                <div className="w-64 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden shrink-0">
-                  <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
+                <div className="w-64 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden shrink-0">
+                  <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-950/50">
                     <h3 className="font-medium text-gray-900 dark:text-white">{t("explorations.variables")}</h3>
                     <button onClick={() => setExplorationState(prev => ({ ...prev, view: 'gallery' }))} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                       <X size={16} />
@@ -1388,8 +1388,8 @@ export default function App() {
                 </div>
 
                 {/* Tab Settings Column */}
-                <div className="w-64 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden shrink-0">
-                  <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                <div className="w-64 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden shrink-0">
+                  <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50">
                     <h3 className="font-medium text-gray-900 dark:text-white">{t("explorations.tab_settings")}</h3>
                   </div>
                   <div className="p-4 overflow-y-auto flex-1 space-y-6">
@@ -1422,7 +1422,7 @@ export default function App() {
                     
                     <div>
                       <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t("explorations.rows")}</h4>
-                      <div className="min-h-[40px] border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-md p-2 flex flex-col gap-2">
+                      <div className="min-h-[40px] border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-md p-2 flex flex-col gap-2">
                         {explorationState.selectedDimensions.length > 0 ? (
                           explorationState.selectedDimensions.map(dimId => {
                             const dim = availableDimensions.find(d => d.id === dimId);
@@ -1441,7 +1441,7 @@ export default function App() {
 
                     <div>
                       <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t("explorations.values")}</h4>
-                      <div className="min-h-[40px] border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-md p-2 flex flex-col gap-2">
+                      <div className="min-h-[40px] border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-md p-2 flex flex-col gap-2">
                         {explorationState.selectedMetrics.length > 0 ? (
                           explorationState.selectedMetrics.map(metId => {
                             const met = availableMetrics.find(m => m.id === metId);
@@ -1461,8 +1461,8 @@ export default function App() {
                 </div>
 
                 {/* Canvas Area */}
-                <div className="flex-1 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
-                  <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex items-center gap-2">
+                <div className="flex-1 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col">
+                  <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50 flex items-center gap-2">
                     <input 
                       type="text" 
                       value={explorationState.name}
@@ -1488,14 +1488,14 @@ export default function App() {
                             return (
                               <table className="w-full text-left border-collapse">
                                 <thead>
-                                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                                  <tr className="border-b border-gray-200 dark:border-gray-800">
                                     <th className="py-3 px-4 font-semibold text-gray-900 dark:text-white">{dimLabel}</th>
                                     <th className="py-3 px-4 font-semibold text-gray-900 dark:text-white text-right">{metLabel}</th>
                                   </tr>
                                 </thead>
                                 <tbody>
                                   {data.map((row, i) => (
-                                    <tr key={i} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                    <tr key={i} className="border-b border-gray-100 dark:border-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                                       <td className="py-3 px-4 text-gray-700 dark:text-gray-300">{row.name}</td>
                                       <td className="py-3 px-4 text-gray-900 dark:text-white font-medium text-right">{row.value}</td>
                                     </tr>
@@ -1572,7 +1572,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="flex-1 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col transition-colors duration-200">
+            <div className="flex-1 bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col transition-colors duration-200">
               {/* Chat Messages Area */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {chatMessages.length === 0 ? (
@@ -1602,7 +1602,7 @@ export default function App() {
                   <>
                     {chatMessages.map((msg, idx) => (
                       <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.role === 'user' ? 'bg-purple-600 text-white rounded-tr-sm' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-tl-sm'}`}>
+                        <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.role === 'user' ? 'bg-purple-600 text-white rounded-tr-sm' : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-tl-sm'}`}>
                           {msg.role === 'model' ? (
                             <div className="prose dark:prose-invert max-w-none prose-sm markdown-body">
                               <Markdown>{msg.content}</Markdown>
@@ -1615,7 +1615,7 @@ export default function App() {
                     ))}
                     {isAnalyzing && (
                       <div className="flex justify-start">
-                        <div className="bg-gray-100 dark:bg-gray-700 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-2">
+                        <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-2">
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
@@ -1628,7 +1628,7 @@ export default function App() {
 
               {/* Input Area */}
               {chatMessages.length > 0 && (
-                <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/50">
                   {aiError && (
                     <div className="mb-3 text-sm text-red-600 dark:text-red-400">
                       {aiError}
@@ -1641,7 +1641,7 @@ export default function App() {
                       onChange={(e) => setChatInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                       placeholder={t("ai_analytics.placeholder")}
-                      className="flex-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                      className="flex-1 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                       disabled={isAnalyzing}
                     />
                     <button
@@ -1674,7 +1674,7 @@ export default function App() {
                 <button 
                   onClick={handleTestEmail}
                   disabled={isSendingTest}
-                  className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
                 >
                   {isSendingTest ? '...' : t("notifications.test_email")}
                 </button>
@@ -1685,8 +1685,8 @@ export default function App() {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-              <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+              <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t("notifications.active_alerts")}</h3>
               </div>
               <div className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -1706,7 +1706,7 @@ export default function App() {
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t("notifications.goal_completion_desc")}</p>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className="px-2.5 py-1 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 text-xs font-medium rounded-full">{t("notifications.paused")}</span>
+                    <span className="px-2.5 py-1 bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 text-xs font-medium rounded-full">{t("notifications.paused")}</span>
                     <button className="text-gray-400 hover:text-blue-600 transition-colors"><Edit2 size={16} /></button>
                   </div>
                 </div>
@@ -1727,17 +1727,17 @@ export default function App() {
                   {t("audit_log.desc")}
                 </p>
               </div>
-              <button className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md font-medium transition-colors flex items-center gap-2">
+              <button className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md font-medium transition-colors flex items-center gap-2">
                 <FileDown size={16} />
                 {t("audit_log.export")}
               </button>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">
+                    <tr className="bg-gray-50 dark:bg-gray-950/50 border-b border-gray-100 dark:border-gray-800">
                       <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t("audit_log.date_time")}</th>
                       <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t("audit_log.user")}</th>
                       <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t("audit_log.action")}</th>
@@ -1777,7 +1777,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="w-full border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 py-6 mt-auto transition-colors duration-200">
+      <footer className="w-full border-t border-gray-200 dark:border-gray-900 bg-white dark:bg-gray-900 py-6 mt-auto transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
             <img src="/logo.svg" alt="UWebAnalytics Logo" className="h-5 w-auto grayscale opacity-70" />

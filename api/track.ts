@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
-import firebaseConfig from '../firebase-applet-config.json';
+import firebaseConfig from '../firebaseconfig';
 
 // Declare db variable
 let db: any;
@@ -26,13 +26,18 @@ export default async function handler(req, res) {
   }
 
   try {
+    let body = req.body;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch(e) {}
+    }
+
     // Initialize Firebase lazily
     if (!db) {
       const firebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
       db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId || '(default)');
     }
 
-    const { eventType, url, path: pagePath, userAgent, referrer, sessionId, screenResolution, lat, lng, country } = req.body;
+    const { eventType, url, path: pagePath, userAgent, referrer, sessionId, screenResolution, lat, lng, country } = body;
 
     
     if (!eventType) {
