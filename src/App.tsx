@@ -1223,8 +1223,8 @@ export default function App() {
                       .filter(e => e.lat && e.lng && e.timestamp && (now.getTime() - parseISO(e.timestamp).getTime() <= 30 * 60 * 1000))
                       .map((e) => (
                         <Marker key={e.id} coordinates={[e.lng!, e.lat!]}>
-                          <circle r={4} fill="#3b82f6" className="animate-pulse" />
-                          <circle r={12} fill="#3b82f6" opacity={0.3} className="animate-ping" />
+                          <circle r={2} fill="#3b82f6" />
+                          <circle r={6} fill="#3b82f6" opacity={0.4} className="animate-ping" />
                         </Marker>
                       ))}
                   </ZoomableGroup>
