@@ -2,9 +2,8 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
-// Initialize Firebase only if it hasn't been initialized yet
-const firebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId);
+// Declare db variable
+let db: any;
 
 export default async function handler(req, res) {
   // Налаштування CORS для дозволу запитів з інших доменів
@@ -18,7 +17,8 @@ export default async function handler(req, res) {
 
   // Обробка preflight-запиту (OPTIONS)
   if (req.method === 'OPTIONS') {
-    return res.status(200).json({ body: "OK" });
+    res.status(200).end();
+    return;
   }
 
   if (req.method !== 'POST') {
@@ -26,7 +26,14 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Initialize Firebase lazily
+    if (!db) {
+      const firebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+      db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId || '(default)');
+    }
+
     const { eventType, url, path: pagePath, userAgent, referrer, sessionId, screenResolution, lat, lng, country } = req.body;
+
     
     if (!eventType) {
       return res.status(400).json({ error: 'eventType is required' });
