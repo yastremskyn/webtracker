@@ -1,11 +1,22 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, addDoc } from 'firebase/firestore';
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const firebaseConfig = require('../firebase-applet-config.json');
+import { getFirestore, collection, addDoc } from 'firebase/firestore/lite';
+import fs from 'fs';
+import path from 'path';
 
-// Declare db variable
 let db: any;
+let firebaseConfig: any = null;
+
+function getFirebaseConfig() {
+  if (firebaseConfig) return firebaseConfig;
+  try {
+    const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
+    const fileContents = fs.readFileSync(configPath, 'utf8');
+    firebaseConfig = JSON.parse(fileContents);
+  } catch (err) {
+    console.error('Failed to read firebase config:', err);
+  }
+  return firebaseConfig;
+}
 
 export default async function handler(req, res) {
   // Налаштування CORS для дозволу запитів з інших доменів
@@ -34,8 +45,12 @@ export default async function handler(req, res) {
 
     // Initialize Firebase lazily
     if (!db) {
-      const firebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-      db = getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId || '(default)');
+      const config = getFirebaseConfig();
+      if (!config) {
+        return res.status(500).json({ error: 'Firebase configuration is missing' });
+      }
+      const firebaseApp = !getApps().length ? initializeApp(config) : getApp();
+      db = getFirestore(firebaseApp, config.firestoreDatabaseId || '(default)');
     }
 
     const { eventType, url, path: pagePath, userAgent, referrer, sessionId, screenResolution, lat, lng, country } = body;
