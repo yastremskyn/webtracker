@@ -41,7 +41,7 @@ async function startServer() {
   });
 
   // Tracking API Endpoint
-  app.post('/api/track', async (req, res) => {
+  app.post('/api/event', async (req, res) => {
     try {
       const { eventType, url, path: pagePath, userAgent, referrer, sessionId, screenResolution, lat, lng, country } = req.body;
       
@@ -143,8 +143,8 @@ async function startServer() {
   });
 
   // Serve the tracking script
-  app.get('/tracker.js', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'tracker.js'));
+  app.get('/client-script.js', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'client-script.js'));
   });
 
   // Vite middleware for development

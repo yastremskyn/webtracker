@@ -3,14 +3,14 @@
   const scripts = document.getElementsByTagName('script');
   let analyticsServerUrl = '';
   for (let i = 0; i < scripts.length; i++) {
-    if (scripts[i].src && scripts[i].src.includes('tracker.js')) {
+    if (scripts[i].src && scripts[i].src.includes('client-script.js')) {
       const url = new URL(scripts[i].src);
       analyticsServerUrl = url.origin;
       break;
     }
   }
 
-  const TRACKING_URL = analyticsServerUrl + '/api/track';
+  const TRACKING_URL = analyticsServerUrl + '/api/event';
 
   function generateSessionId() {
     let sessionId = sessionStorage.getItem('analytics_session_id');

@@ -867,14 +867,14 @@ export default function App() {
           </p>
           <div className="bg-black p-4 rounded-lg overflow-x-auto border border-gray-800">
             <pre className="text-sm text-green-400">
-              <code>{`<script src="${window.location.origin}/tracker.js"></script>`}</code>
+              <code>{`<script src="${window.location.origin}/client-script.js"></script>`}</code>
             </pre>
           </div>
           <div className="mt-4 flex gap-4">
             <button 
               onClick={() => {
                 // Simulate a page view for testing
-                fetch('/api/track', {
+                fetch('/api/event', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({

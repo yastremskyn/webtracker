@@ -1,13 +1,12 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
-import firebaseConfig from '../firebaseconfig';
+import firebaseConfig from '../firebase-applet-config.json';
 
 // Declare db variable
 let db: any;
 
 export default async function handler(req, res) {
   // Налаштування CORS для дозволу запитів з інших доменів
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader(
