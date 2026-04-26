@@ -53,7 +53,7 @@ export default async function handler(req, res) {
       db = getFirestore(firebaseApp, config.firestoreDatabaseId || '(default)');
     }
 
-    const { eventType, url, path: pagePath, userAgent, referrer, sessionId, screenResolution, lat, lng, country } = body;
+    const { eventType, url, path: pagePath, userAgent, referrer, sessionId, screenResolution, lat, lng, country, projectId } = body;
 
     
     if (!eventType) {
@@ -62,6 +62,7 @@ export default async function handler(req, res) {
 
     const eventData = {
       eventType,
+      projectId: projectId || 'anonymous',
       url: url || '',
       path: pagePath || '',
       userAgent: userAgent || req.headers['user-agent'] || '',

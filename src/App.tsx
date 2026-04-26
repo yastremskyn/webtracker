@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import './i18n';
-import { collection, query, onSnapshot, orderBy, limit, addDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, limit, addDoc, where } from 'firebase/firestore';
 import { db, auth, loginWithGoogle, logout } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
@@ -424,7 +424,7 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
 
-    const q = query(collection(db, 'events'), orderBy('timestamp', 'desc'));
+    const q = query(collection(db, 'events'), where('projectId', '==', user.uid), orderBy('timestamp', 'desc'));
     const unsubscribeEvents = onSnapshot(q, (snapshot) => {
       const eventsData: AnalyticsEvent[] = [];
       snapshot.forEach((doc) => {
@@ -867,7 +867,7 @@ export default function App() {
           </p>
           <div className="bg-black p-4 rounded-lg overflow-x-auto border border-gray-800">
             <pre className="text-sm text-green-400">
-              <code>{`<script src="${window.location.origin}/client-script.js"></script>`}</code>
+              <code>{`<script src="${window.location.origin}/client-script.js" data-project-id="${user.uid}"></script>`}</code>
             </pre>
           </div>
           <div className="mt-4 flex gap-4">
@@ -885,7 +885,8 @@ export default function App() {
                     sessionId: 'session-' + Math.floor(Math.random() * 10000),
                     userEmail: 'customer@gmail.com',
                     lat: 50.4501, // Kyiv latitude
-                    lng: 30.5234  // Kyiv longitude
+                    lng: 30.5234,  // Kyiv longitude
+                    projectId: user.uid
                   })
                 }).then(() => {
                   logAuditAction('Test Event Fired', 'User sent a test page_view event');

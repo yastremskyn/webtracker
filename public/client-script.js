@@ -2,10 +2,12 @@
   // Get the script tag that loaded this file to determine the analytics server URL
   const scripts = document.getElementsByTagName('script');
   let analyticsServerUrl = '';
+  let projectId = '';
   for (let i = 0; i < scripts.length; i++) {
     if (scripts[i].src && scripts[i].src.includes('client-script.js')) {
       const url = new URL(scripts[i].src);
       analyticsServerUrl = url.origin;
+      projectId = scripts[i].getAttribute('data-project-id') || '';
       break;
     }
   }
@@ -39,6 +41,7 @@
 
     const payload = {
       eventType,
+      projectId,
       url: window.location.href,
       path: window.location.pathname,
       referrer: document.referrer,
