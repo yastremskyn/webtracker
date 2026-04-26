@@ -131,15 +131,17 @@ interface AlertConfig {
   type: string;
 }
 
+const STANDARD_ALERTS = [
+  { id: 'traffic_drop', titleKey: 'notifications.traffic_drop', descKey: 'notifications.traffic_drop_desc' },
+  { id: 'weekly_report', titleKey: 'notifications.weekly_report', descKey: 'notifications.weekly_report_desc' },
+];
+
 export default function App() {
   const { t, i18n } = useTranslation();
   const [user, setUser] = useState<User | null>(null);
   const [events, setEvents] = useState<AnalyticsEvent[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [alerts, setAlerts] = useState<AlertConfig[]>([]);
-  const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
-  const [newAlertName, setNewAlertName] = useState('');
-  const [newAlertDesc, setNewAlertDesc] = useState('');
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(new Date());
   const [activeTab, setActiveTab] = useState<'overview' | 'reports' | 'realtime' | 'explorations' | 'ai_analytics' | 'notifications' | 'audit_log'>('overview');
@@ -255,43 +257,28 @@ export default function App() {
     };
   }, [user]);
 
-  const handleCreateAlert = async () => {
-    if (!user || !newAlertName.trim()) return;
+  const handleToggleStandardAlert = async (alertTypeId: string, currentActive: boolean) => {
+    if (!user) return;
     try {
-      await addDoc(collection(db, 'alerts'), {
-        projectId: user.uid,
-        name: newAlertName,
-        description: newAlertDesc || 'Custom email alert',
-        active: true,
-        type: 'custom',
-        timestamp: new Date().toISOString()
-      });
-      setNewAlertName('');
-      setNewAlertDesc('');
-      setIsAlertModalOpen(false);
-      logAuditAction('Alert Created', `User created a new alert: ${newAlertName}`);
-    } catch (error) {
-      console.error('Failed to create alert:', error);
-    }
-  };
-
-  const handleToggleAlert = async (alertId: string, currentActive: boolean) => {
-    try {
-      await updateDoc(doc(db, 'alerts', alertId), {
-        active: !currentActive
-      });
-      logAuditAction('Alert Toggled', `User toggled alert ${alertId} to ${!currentActive}`);
+      const existingAlert = alerts.find(a => a.type === alertTypeId);
+      if (existingAlert) {
+        await updateDoc(doc(db, 'alerts', existingAlert.id), {
+          active: !currentActive
+        });
+        logAuditAction('Alert Toggled', `User toggled alert ${alertTypeId} to ${!currentActive}`);
+      } else {
+        await addDoc(collection(db, 'alerts'), {
+          projectId: user.uid,
+          name: alertTypeId,
+          description: '',
+          active: true,
+          type: alertTypeId,
+          timestamp: new Date().toISOString()
+        });
+        logAuditAction('Alert Enabled', `User enabled alert ${alertTypeId}`);
+      }
     } catch (error) {
       console.error('Failed to toggle alert:', error);
-    }
-  };
-
-  const handleDeleteAlert = async (alertId: string) => {
-    try {
-      await deleteDoc(doc(db, 'alerts', alertId));
-      logAuditAction('Alert Deleted', `User deleted alert ${alertId}`);
-    } catch (error) {
-      console.error('Failed to delete alert:', error);
     }
   };
 
@@ -1844,101 +1831,42 @@ export default function App() {
                 >
                   {isSendingTest ? '...' : t("notifications.test_email")}
                 </button>
-                <button 
-                  onClick={() => setIsAlertModalOpen(true)}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors flex items-center gap-2">
-                  <Plus size={16} />
-                  {t("notifications.create_alert")}
-                </button>
               </div>
             </div>
 
             <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
               <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t("notifications.active_alerts")}</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t("notifications.active_alerts", "Active Alerts")}</h3>
               </div>
               <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                {alerts.length === 0 ? (
-                  <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-                    {t("overview.no_data", "No alerts configured")}
-                  </div>
-                ) : (
-                  alerts.map(alert => (
-                    <div key={alert.id} className="p-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                {STANDARD_ALERTS.map(alertDef => {
+                  const alertRecord = alerts.find(a => a.type === alertDef.id);
+                  const isActive = alertRecord ? alertRecord.active : false;
+                  return (
+                    <div key={alertDef.id} className="p-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                       <div>
-                        <h4 className="font-medium text-gray-900 dark:text-white">{alert.name}</h4>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{alert.description}</p>
+                        <h4 className="font-medium text-gray-900 dark:text-white">{t(alertDef.titleKey)}</h4>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t(alertDef.descKey)}</p>
                       </div>
                       <div className="flex items-center gap-4">
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input 
                             type="checkbox" 
                             className="sr-only peer" 
-                            checked={alert.active}
-                            onChange={() => handleToggleAlert(alert.id, alert.active)}
+                            checked={isActive}
+                            onChange={() => handleToggleStandardAlert(alertDef.id, isActive)}
                           />
                           <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                         </label>
-                        <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${alert.active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}`}>
-                          {alert.active ? t("notifications.active") : t("notifications.paused")}
+                        <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${isActive ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}`}>
+                          {isActive ? t("notifications.active") : t("notifications.paused")}
                         </span>
-                        <button 
-                          onClick={() => handleDeleteAlert(alert.id)}
-                          className="text-gray-400 hover:text-red-600 transition-colors"
-                        >
-                          <X size={16} />
-                        </button>
                       </div>
                     </div>
-                  ))
-                )}
+                  );
+                })}
               </div>
             </div>
-
-            {isAlertModalOpen && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 p-6 max-w-md w-full">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Create Email Alert</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Alert Name</label>
-                      <input 
-                        type="text" 
-                        value={newAlertName}
-                        onChange={(e) => setNewAlertName(e.target.value)}
-                        placeholder="e.g. Traffic Drop, Weekly Newsletter" 
-                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                      <input 
-                        type="text" 
-                        value={newAlertDesc}
-                        onChange={(e) => setNewAlertDesc(e.target.value)}
-                        placeholder="e.g. Notify me when traffic drops by 20%" 
-                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                      />
-                    </div>
-                  </div>
-                  <div className="mt-6 flex justify-end gap-3">
-                    <button 
-                      onClick={() => setIsAlertModalOpen(false)}
-                      className="px-4 py-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-medium"
-                    >
-                      Cancel
-                    </button>
-                    <button 
-                      onClick={handleCreateAlert}
-                      disabled={!newAlertName.trim()}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-md font-medium transition-colors"
-                    >
-                      Create
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
