@@ -6,11 +6,11 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import './i18n';
-import { collection, query, onSnapshot, orderBy, limit, addDoc, where } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, limit, addDoc, where, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db, auth, loginWithGoogle, logout } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
-import { format, parseISO, subDays } from 'date-fns';
+import { format, parseISO, subDays, subHours, subMonths } from 'date-fns';
 import { Activity, Users, MousePointerClick, Globe, LogOut, LogIn, Code, Sun, Moon, LayoutDashboard, BarChart2, ChevronDown, Map as MapIcon, GripHorizontal, X, Plus, Edit2, Check, Sparkles, Compass, Filter, Table, PieChart as PieChartIcon, LineChart as LineChartIcon, FileText, MoreHorizontal, FileDown, Bell, History, User as UserIcon, Settings } from 'lucide-react';
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 'react-simple-maps';
 import * as countries from 'i18n-iso-countries';
@@ -122,14 +122,28 @@ interface AuditLog {
   details: string;
 }
 
+interface AlertConfig {
+  id: string;
+  projectId: string;
+  name: string;
+  description: string;
+  active: boolean;
+  type: string;
+}
+
 export default function App() {
   const { t, i18n } = useTranslation();
   const [user, setUser] = useState<User | null>(null);
   const [events, setEvents] = useState<AnalyticsEvent[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [alerts, setAlerts] = useState<AlertConfig[]>([]);
+  const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  const [newAlertName, setNewAlertName] = useState('');
+  const [newAlertDesc, setNewAlertDesc] = useState('');
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(new Date());
   const [activeTab, setActiveTab] = useState<'overview' | 'reports' | 'realtime' | 'explorations' | 'ai_analytics' | 'notifications' | 'audit_log'>('overview');
+  const [activityRange, setActivityRange] = useState<'24h' | '7d' | '30d' | '1y'>('7d');
   const [isReportsMenuOpen, setIsReportsMenuOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
@@ -225,8 +239,61 @@ export default function App() {
       });
       setAuditLogs(logs);
     });
-    return () => unsubscribe();
+
+    const alertsQ = query(collection(db, 'alerts'), where('projectId', '==', user.uid));
+    const unsubscribeAlerts = onSnapshot(alertsQ, (snapshot) => {
+      const alertsData: AlertConfig[] = [];
+      snapshot.forEach((doc) => {
+        alertsData.push({ id: doc.id, ...doc.data() } as AlertConfig);
+      });
+      setAlerts(alertsData);
+    });
+
+    return () => {
+      unsubscribe();
+      unsubscribeAlerts();
+    };
   }, [user]);
+
+  const handleCreateAlert = async () => {
+    if (!user || !newAlertName.trim()) return;
+    try {
+      await addDoc(collection(db, 'alerts'), {
+        projectId: user.uid,
+        name: newAlertName,
+        description: newAlertDesc || 'Custom email alert',
+        active: true,
+        type: 'custom',
+        timestamp: new Date().toISOString()
+      });
+      setNewAlertName('');
+      setNewAlertDesc('');
+      setIsAlertModalOpen(false);
+      logAuditAction('Alert Created', `User created a new alert: ${newAlertName}`);
+    } catch (error) {
+      console.error('Failed to create alert:', error);
+    }
+  };
+
+  const handleToggleAlert = async (alertId: string, currentActive: boolean) => {
+    try {
+      await updateDoc(doc(db, 'alerts', alertId), {
+        active: !currentActive
+      });
+      logAuditAction('Alert Toggled', `User toggled alert ${alertId} to ${!currentActive}`);
+    } catch (error) {
+      console.error('Failed to toggle alert:', error);
+    }
+  };
+
+  const handleDeleteAlert = async (alertId: string) => {
+    try {
+      await deleteDoc(doc(db, 'alerts', alertId));
+      logAuditAction('Alert Deleted', `User deleted alert ${alertId}`);
+    } catch (error) {
+      console.error('Failed to delete alert:', error);
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -443,30 +510,58 @@ export default function App() {
 
   // Process data for charts
   const processChartData = () => {
-    const last7Days = Array.from({ length: 7 }).map((_, i) => {
-      const d = subDays(new Date(), i);
-      return format(d, 'MMM dd');
-    }).reverse();
+    const dataMap: Record<string, any> = {};
+    const keys: string[] = [];
 
-    const dataMap = last7Days.reduce((acc, date) => {
-      acc[date] = { date, pageViews: 0, clicks: 0 };
-      return acc;
-    }, {} as Record<string, any>);
+    if (activityRange === '24h') {
+      for (let i = 23; i >= 0; i--) {
+        const d = subHours(new Date(), i);
+        const key = format(d, 'HH:00');
+        keys.push(key);
+        dataMap[key] = { date: key, pageViews: 0, clicks: 0 };
+      }
+    } else if (activityRange === '7d') {
+      for (let i = 6; i >= 0; i--) {
+        const d = subDays(new Date(), i);
+        const key = format(d, 'MMM dd');
+        keys.push(key);
+        dataMap[key] = { date: key, pageViews: 0, clicks: 0 };
+      }
+    } else if (activityRange === '30d') {
+      for (let i = 29; i >= 0; i--) {
+         const d = subDays(new Date(), i);
+         const key = format(d, 'MMM dd');
+         if (!keys.includes(key)) keys.push(key);
+         dataMap[key] = { date: key, pageViews: 0, clicks: 0 };
+      }
+    } else if (activityRange === '1y') {
+      for (let i = 11; i >= 0; i--) {
+         const d = subMonths(new Date(), i);
+         const key = format(d, 'MMM yyyy');
+         if (!keys.includes(key)) keys.push(key);
+         dataMap[key] = { date: key, pageViews: 0, clicks: 0 };
+      }
+    }
 
     events.forEach(event => {
       if (!event.timestamp) return;
       try {
-        const dateStr = format(parseISO(event.timestamp), 'MMM dd');
-        if (dataMap[dateStr]) {
-          if (event.eventType === 'page_view') dataMap[dateStr].pageViews += 1;
-          if (event.eventType === 'click') dataMap[dateStr].clicks += 1;
+        const d = parseISO(event.timestamp);
+        let key = '';
+        if (activityRange === '24h') key = format(d, 'HH:00');
+        else if (activityRange === '7d' || activityRange === '30d') key = format(d, 'MMM dd');
+        else if (activityRange === '1y') key = format(d, 'MMM yyyy');
+        
+        if (dataMap[key]) {
+          if (event.eventType === 'page_view') dataMap[key].pageViews += 1;
+          if (event.eventType === 'click') dataMap[key].clicks += 1;
         }
       } catch (e) {
         // Handle invalid dates gracefully
       }
     });
 
-    return Object.values(dataMap);
+    return keys.map(k => dataMap[k]);
   };
 
   const chartData = processChartData();
@@ -843,9 +938,22 @@ export default function App() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Charts Area */}
           <div className="lg:col-span-2 space-y-8">
-            {/* 7 Days Chart */}
+            {/* Activity Chart */}
             <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 transition-colors duration-200">
-              <h2 className="text-lg font-bold mb-6 text-gray-900 dark:text-white">{t("overview.activity_7_days")}</h2>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t("overview.activity_title")}</h2>
+                <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1 w-full sm:w-auto overflow-x-auto shrink-0">
+                  {(['24h', '7d', '30d', '1y'] as const).map(range => (
+                    <button
+                      key={range}
+                      onClick={() => setActivityRange(range)}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex-1 sm:flex-none whitespace-nowrap ${activityRange === range ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                    >
+                      {t(`overview.range_${range}`)}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
@@ -1736,7 +1844,9 @@ export default function App() {
                 >
                   {isSendingTest ? '...' : t("notifications.test_email")}
                 </button>
-                <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors flex items-center gap-2">
+                <button 
+                  onClick={() => setIsAlertModalOpen(true)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors flex items-center gap-2">
                   <Plus size={16} />
                   {t("notifications.create_alert")}
                 </button>
@@ -1748,28 +1858,87 @@ export default function App() {
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t("notifications.active_alerts")}</h3>
               </div>
               <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                <div className="p-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                  <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white">{t("notifications.traffic_drop")}</h4>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t("notifications.traffic_drop_desc")}</p>
+                {alerts.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                    {t("overview.no_data", "No alerts configured")}
                   </div>
-                  <div className="flex items-center gap-4">
-                    <span className="px-2.5 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-medium rounded-full">{t("notifications.active")}</span>
-                    <button className="text-gray-400 hover:text-blue-600 transition-colors"><Edit2 size={16} /></button>
+                ) : (
+                  alerts.map(alert => (
+                    <div key={alert.id} className="p-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <div>
+                        <h4 className="font-medium text-gray-900 dark:text-white">{alert.name}</h4>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{alert.description}</p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            className="sr-only peer" 
+                            checked={alert.active}
+                            onChange={() => handleToggleAlert(alert.id, alert.active)}
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                        </label>
+                        <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${alert.active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}`}>
+                          {alert.active ? t("notifications.active") : t("notifications.paused")}
+                        </span>
+                        <button 
+                          onClick={() => handleDeleteAlert(alert.id)}
+                          className="text-gray-400 hover:text-red-600 transition-colors"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {isAlertModalOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 p-6 max-w-md w-full">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Create Email Alert</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Alert Name</label>
+                      <input 
+                        type="text" 
+                        value={newAlertName}
+                        onChange={(e) => setNewAlertName(e.target.value)}
+                        placeholder="e.g. Traffic Drop, Weekly Newsletter" 
+                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                      <input 
+                        type="text" 
+                        value={newAlertDesc}
+                        onChange={(e) => setNewAlertDesc(e.target.value)}
+                        placeholder="e.g. Notify me when traffic drops by 20%" 
+                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="p-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                  <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white">{t("notifications.goal_completion")}</h4>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t("notifications.goal_completion_desc")}</p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="px-2.5 py-1 bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 text-xs font-medium rounded-full">{t("notifications.paused")}</span>
-                    <button className="text-gray-400 hover:text-blue-600 transition-colors"><Edit2 size={16} /></button>
+                  <div className="mt-6 flex justify-end gap-3">
+                    <button 
+                      onClick={() => setIsAlertModalOpen(false)}
+                      className="px-4 py-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-medium"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={handleCreateAlert}
+                      disabled={!newAlertName.trim()}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-md font-medium transition-colors"
+                    >
+                      Create
+                    </button>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
