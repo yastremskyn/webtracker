@@ -11,7 +11,7 @@ import { db, auth, loginWithGoogle, logout } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { format, parseISO, subDays } from 'date-fns';
-import { Activity, Users, MousePointerClick, Globe, LogOut, LogIn, Code, Sun, Moon, LayoutDashboard, BarChart2, ChevronDown, Map as MapIcon, GripHorizontal, X, Plus, Edit2, Check, Sparkles, Compass, Filter, Table, PieChart as PieChartIcon, LineChart as LineChartIcon, FileText, MoreHorizontal, FileDown, Bell, History } from 'lucide-react';
+import { Activity, Users, MousePointerClick, Globe, LogOut, LogIn, Code, Sun, Moon, LayoutDashboard, BarChart2, ChevronDown, Map as MapIcon, GripHorizontal, X, Plus, Edit2, Check, Sparkles, Compass, Filter, Table, PieChart as PieChartIcon, LineChart as LineChartIcon, FileText, MoreHorizontal, FileDown, Bell, History, User as UserIcon, Settings } from 'lucide-react';
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 'react-simple-maps';
 import * as countries from 'i18n-iso-countries';
 import enLocale from 'i18n-iso-countries/langs/en.json';
@@ -145,6 +145,7 @@ export default function App() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [tooltipContent, setTooltipContent] = useState<{name: string, flag: React.ReactNode, users: number, x: number, y: number} | null>(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   // Explorations state
   const [explorationState, setExplorationState] = useState<{
@@ -734,17 +735,73 @@ export default function App() {
               </span>
             </button>
             
-            <div className="text-sm text-gray-600 dark:text-gray-300 hidden sm:block border-l border-gray-200 dark:border-gray-800 pl-4">
-              {user.email}
+            <div className="relative border-l border-gray-200 dark:border-gray-800 pl-4 ml-2">
+              <button
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 hover:ring-2 hover:ring-blue-500 hover:ring-offset-2 dark:hover:ring-offset-gray-950 transition-all focus:outline-none"
+                title={`${user.displayName || user.email} Profile`}
+              >
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt="Profile avatar" className="h-8 w-8 rounded-full" />
+                ) : (
+                  <UserIcon size={18} />
+                )}
+              </button>
+
+              {isProfileOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setIsProfileOpen(false)}
+                  />
+                  <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-100 dark:border-gray-800 z-50 overflow-hidden transform opacity-100 scale-100 translate-y-0 transition-all origin-top-right">
+                    <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex flex-shrink-0 items-center justify-center text-blue-600 dark:text-blue-400">
+                        {user.photoURL ? (
+                          <img src={user.photoURL} alt="Avatar" className="h-full w-full rounded-full" />
+                        ) : (
+                          <UserIcon size={20} />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {user.displayName || 'User'}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {user.email}
+                        </p>
+                      </div>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                        Active
+                      </span>
+                    </div>
+                    
+                    <div className="p-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
+                      <h4 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Connected Project</h4>
+                      <div className="flex items-start gap-2">
+                        <Code size={14} className="text-blue-500 mt-0.5" />
+                        <div>
+                          <p className="text-sm text-gray-700 dark:text-gray-300 font-mono break-all leading-tight">
+                            {user.uid}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">This ID is currently receiving analytics data from your tracked site.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-2">
+                      <button
+                        onClick={logout}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                      >
+                        <LogOut size={16} />
+                        <span>{t("nav.logout")}</span>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
-            <button
-              onClick={logout}
-              className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-              title={t("nav.logout")}
-            >
-              <LogOut size={20} />
-              <span className="hidden sm:block">{t("nav.logout")}</span>
-            </button>
           </div>
         </div>
       </header>
