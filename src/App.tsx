@@ -597,14 +597,18 @@ export default function App() {
 
   const topSearchQueries = Object.entries(
     events.reduce((acc, e) => {
-      if (e.url) {
+      const urlToParse = e.url || e.path;
+      if (urlToParse) {
         try {
           // If URL is relative, use a dummy base to parse query params
-          const urlStr = e.url.startsWith('http') ? e.url : `http://dummy.com${e.url.startsWith('/') ? '' : '/'}${e.url}`;
+          const urlStr = urlToParse.startsWith('http') ? urlToParse : `http://dummy.com${urlToParse.startsWith('/') ? '' : '/'}${urlToParse}`;
           const urlObj = new URL(urlStr);
-          const q = urlObj.searchParams.get('q') || urlObj.searchParams.get('search') || urlObj.searchParams.get('query');
+          const q = urlObj.searchParams.get('q') || urlObj.searchParams.get('search') || urlObj.searchParams.get('query') || urlObj.searchParams.get('searchstring') || urlObj.searchParams.get('keyword');
           if (q) {
-            acc[q] = (acc[q] || 0) + 1;
+            const cleanQ = q.trim();
+            if (cleanQ) {
+              acc[cleanQ] = (acc[cleanQ] || 0) + 1;
+            }
           }
         } catch (err) {}
       }
