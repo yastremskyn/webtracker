@@ -614,7 +614,7 @@ export default function App() {
       }
       return acc;
     }, {} as Record<string, number>)
-  ).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  ).sort((a, b) => b[1] - a[1]).slice(0, 10);
 
   const uniqueUsers = new Set(events.map(e => e.sessionId)).size;
   const totalPageViews = events.filter(e => e.eventType === 'page_view').length;
