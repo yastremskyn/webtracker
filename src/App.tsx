@@ -38,7 +38,6 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStr
 import { CSS } from '@dnd-kit/utilities';
 import Markdown from 'react-markdown';
 
-// Using an older version of world-atlas (Natural Earth) where Crimea is correctly shown as Ukraine
 const geoUrl = "https://unpkg.com/world-atlas@1.1.4/world/110m.json";
 
 function SortableWidget({ id, children, isEditMode, onRemove, colSpan }: { id: string, children: React.ReactNode, isEditMode: boolean, onRemove: (id: string) => void, colSpan: number }) {
@@ -163,7 +162,6 @@ export default function App() {
   const [tooltipContent, setTooltipContent] = useState<{name: string, flag: React.ReactNode, users: number, x: number, y: number} | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  // Explorations state
   const [explorationState, setExplorationState] = useState<{
     view: 'gallery' | 'editor';
     name: string;
@@ -345,7 +343,7 @@ export default function App() {
     const textToSend = messageText || chatInput;
     if (!textToSend.trim()) return;
 
-    logAuditAction('AI Chat', `User sent a message to AI Assistant: "${textToSend.substring(0, 30)}..."`);
+    logAuditAction('Smart Assistant Chat', `User sent a message to the assistant: "${textToSend.substring(0, 30)}..."`);
 
     const newUserMsg: ChatMessage = { role: 'user', content: textToSend };
     setChatMessages(prev => [...prev, newUserMsg]);
@@ -354,7 +352,6 @@ export default function App() {
     setAiError(null);
 
     try {
-      // Summarize data for the AI
       const totalEvents = events.length;
       const totalPageViews = events.filter(e => e.eventType === 'page_view').length;
       const totalClicks = events.filter(e => e.eventType === 'click').length;
@@ -374,7 +371,7 @@ export default function App() {
         .map(([url, views]) => `${url}: ${views} views`)
         .join('\\n');
 
-      const systemInstruction = `You are an expert web analytics AI assistant. Your goal is to chat with the user and analyze their website's performance based on the provided data. 
+      const systemInstruction = `You are an expert web analytics assistant. Your goal is to chat with the user and analyze their website's performance based on the provided data. 
       Specifically, you MUST explicitly state which metrics are "great" (чудові) and which are "bad" or "need improvement" (погані). Be conversational, concise, and helpful.
       Respond in ${i18n.language === 'uk' ? 'Ukrainian' : 'English'}.
       
@@ -409,14 +406,14 @@ export default function App() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch AI response');
+        throw new Error('Failed to fetch assistant response');
       }
 
       const data = await response.json();
       const aiResponseText = data.text || 'Error generating response.';
       setChatMessages(prev => [...prev, { role: 'model', content: aiResponseText }]);
     } catch (error) {
-      console.error('Error in AI chat:', error);
+      console.error('Error in assistant chat:', error);
       setAiError(t("ai_analytics.error"));
     } finally {
       setIsAnalyzing(false);
@@ -439,13 +436,11 @@ export default function App() {
     return false;
   });
 
-  // Оновлюємо поточний час кожні 10 секунд для зсуву "вікна" реального часу
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 10000);
     return () => clearInterval(interval);
   }, []);
 
-  // Застосовуємо темну тему до HTML документа
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -463,8 +458,6 @@ export default function App() {
       if (!currentUser) {
         setLoading(false);
       } else if (isFirstLogin) {
-        // We can't use logAuditAction directly here if it depends on auth.currentUser being fully set in state,
-        // but auth.currentUser is set synchronously by Firebase.
         addDoc(collection(db, 'audit_logs'), {
           timestamp: new Date().toISOString(),
           userEmail: currentUser.email || 'Unknown',
@@ -495,7 +488,6 @@ export default function App() {
     return () => unsubscribeEvents();
   }, [user]);
 
-  // Process data for charts
   const processChartData = () => {
     const dataMap: Record<string, any> = {};
     const keys: string[] = [];
@@ -544,7 +536,6 @@ export default function App() {
           if (event.eventType === 'click') dataMap[key].clicks += 1;
         }
       } catch (e) {
-        // Handle invalid dates gracefully
       }
     });
 
@@ -553,7 +544,6 @@ export default function App() {
 
   const chartData = processChartData();
 
-  // Process data for real-time chart (last 2 minutes, 10-second buckets)
   const processRealTimeData = () => {
     const buckets = [];
     const bucketCount = 12; // 12 intervals of 10 seconds = 120 seconds (2 minutes)
@@ -585,10 +575,8 @@ export default function App() {
 
   const realTimeData = processRealTimeData();
 
-  // Calculate top pages by URL to clearly show it's tracking external sites
   const topPages = Object.entries(
     events.filter(e => e.eventType === 'page_view').reduce((acc, e) => {
-      // Use URL if available, otherwise fallback to path
       const displayUrl = e.url || e.path || '/';
       acc[displayUrl] = (acc[displayUrl] || 0) + 1;
       return acc;
@@ -600,7 +588,6 @@ export default function App() {
       const urlToParse = e.url || e.path;
       if (urlToParse) {
         try {
-          // If URL is relative, use a dummy base to parse query params
           const urlStr = urlToParse.startsWith('http') ? urlToParse : `http://dummy.com${urlToParse.startsWith('/') ? '' : '/'}${urlToParse}`;
           const urlObj = new URL(urlStr);
           const q = urlObj.searchParams.get('q') || urlObj.searchParams.get('search') || urlObj.searchParams.get('query') || urlObj.searchParams.get('searchstring') || urlObj.searchParams.get('keyword');
@@ -620,7 +607,6 @@ export default function App() {
   const totalPageViews = events.filter(e => e.eventType === 'page_view').length;
   const totalClicks = events.filter(e => e.eventType === 'click').length;
 
-  // Data for Reports Tab
   const activeUsers30Mins = new Set(
     events
       .filter(e => e.timestamp && (now.getTime() - parseISO(e.timestamp).getTime() <= 30 * 60 * 1000))
@@ -670,8 +656,6 @@ export default function App() {
             onClick={async () => {
               try {
                 await loginWithGoogle();
-                // Note: The actual logging will happen in onAuthStateChanged or we can log it here if we want, but auth.currentUser might not be set immediately.
-                // Let's log it in a useEffect that watches `user` state.
               } catch (e) {
                 console.error(e);
               }
@@ -1062,34 +1046,6 @@ export default function App() {
             <pre className="text-sm text-green-400">
               <code>{`<script src="${window.location.origin}/client-script.js" data-project-id="${user.uid}"></script>`}</code>
             </pre>
-          </div>
-          <div className="mt-4 flex gap-4">
-            <button 
-              onClick={() => {
-                // Simulate a page view for testing
-                fetch('/api/event', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    eventType: 'page_view',
-                    path: '/catalog/shoes',
-                    url: 'https://my-shop.com/catalog/shoes',
-                    userAgent: navigator.userAgent,
-                    sessionId: 'session-' + Math.floor(Math.random() * 10000),
-                    userEmail: 'customer@gmail.com',
-                    lat: 50.4501, // Kyiv latitude
-                    lng: 30.5234,  // Kyiv longitude
-                    projectId: user.uid
-                  })
-                }).then(() => {
-                  logAuditAction('Test Event Fired', 'User sent a test page_view event');
-                  alert(t("overview.test_alert"));
-                });
-              }}
-              className="text-sm bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded transition-colors"
-            >
-              {t("overview.test_event")}
-            </button>
           </div>
         </div>
           </>

@@ -18,7 +18,7 @@ const resources = {
         reports_overview: "Reports Overview",
         realtime: "Realtime",
         explorations: "Explore",
-        ai_analytics: "AI Analytics",
+        ai_analytics: "Smart Analytics",
         other: "Other",
         export_pdf: "Export to PDF",
         notifications: "Email Notifications",
@@ -55,9 +55,7 @@ const resources = {
         update_10s: "Updates every 10s",
         events: "Events",
         how_to_connect: "How to connect to your site",
-        script_desc: "Add this script before the closing </body> tag on your site to start collecting data.",
-        test_event: "Send test event",
-        test_alert: "Test event sent from my-shop.com!"
+        script_desc: "Add this script before the closing </body> tag on your site to start collecting data."
       },
       reports: {
         create_overview: "Create Reports Overview",
@@ -126,11 +124,11 @@ const resources = {
         anonymous: "Anonymous"
       },
       ai_analytics: {
-        title: "AI Analytics Chat",
-        description: "Chat with our AI assistant to analyze your website's performance. It will highlight what's working well and what needs improvement.",
+        title: "Smart Analytics Chat",
+        description: "Chat with our smart assistant to analyze your website's performance. It will highlight what's working well and what needs improvement.",
         placeholder: "Ask a question about your analytics...",
         send: "Send",
-        analyzing: "AI is typing...",
+        analyzing: "Assistant is typing...",
         error: "Failed to send message. Please try again.",
         start_chat: "Start Analysis"
       },
@@ -208,7 +206,7 @@ const resources = {
         reports_overview: "Короткий огляд звітів",
         realtime: "У реальному часі",
         explorations: "Дослідження",
-        ai_analytics: "ШІ аналітика",
+        ai_analytics: "Смарт-аналітика",
         other: "Інше",
         export_pdf: "Експорт у PDF",
         notifications: "Сповіщення на email",
@@ -245,9 +243,7 @@ const resources = {
         update_10s: "Оновлення кожні 10с",
         events: "Події",
         how_to_connect: "Як підключити до вашого сайту",
-        script_desc: "Додайте цей скрипт перед закриваючим тегом </body> на вашому сайті, щоб почати збір даних.",
-        test_event: "Відправити тестову подію",
-        test_alert: "Тестову подію відправлено з my-shop.com!"
+        script_desc: "Додайте цей скрипт перед закриваючим тегом </body> на вашому сайті, щоб почати збір даних."
       },
       reports: {
         create_overview: "Створити короткий огляд звітів",
@@ -316,11 +312,11 @@ const resources = {
         anonymous: "Анонімний"
       },
       ai_analytics: {
-        title: "ШІ Аналітика (Чат)",
-        description: "Спілкуйтеся з нашим ШІ-асистентом для аналізу ефективності вашого сайту. Він підкаже, що працює добре, а що потребує покращення.",
+        title: "Смарт-Аналітика (Чат)",
+        description: "Спілкуйтеся з нашим смарт-асистентом для аналізу ефективності вашого сайту. Він підкаже, що працює добре, а що потребує покращення.",
         placeholder: "Задайте питання про вашу аналітику...",
         send: "Надіслати",
-        analyzing: "ШІ друкує...",
+        analyzing: "Асистент друкує...",
         error: "Не вдалося надіслати повідомлення. Спробуйте ще раз.",
         start_chat: "Почати аналіз"
       },
