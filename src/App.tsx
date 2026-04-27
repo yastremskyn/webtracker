@@ -1410,15 +1410,39 @@ export default function App() {
                       }
                     </Geographies>
                     {events
+                      .filter(e => e.lat && e.lng && e.timestamp && (now.getTime() - parseISO(e.timestamp).getTime() <= 24 * 60 * 60 * 1000) && (now.getTime() - parseISO(e.timestamp).getTime() > 30 * 60 * 1000))
+                      .map((e) => (
+                        <Marker key={`24h-${e.id}`} coordinates={[e.lng!, e.lat!]}>
+                          <circle r={2} fill="#22c55e" opacity={0.6} />
+                        </Marker>
+                      ))}
+                    {events
                       .filter(e => e.lat && e.lng && e.timestamp && (now.getTime() - parseISO(e.timestamp).getTime() <= 30 * 60 * 1000))
                       .map((e) => (
-                        <Marker key={e.id} coordinates={[e.lng!, e.lat!]}>
+                        <Marker key={`30m-${e.id}`} coordinates={[e.lng!, e.lat!]}>
                           <circle r={2} fill="#3b82f6" />
                           <circle r={6} fill="#3b82f6" opacity={0.4} className="animate-ping" />
                         </Marker>
                       ))}
                   </ZoomableGroup>
                 </ComposableMap>
+              </div>
+
+              {/* Legend Overlay */}
+              <div className="absolute top-6 right-6 bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 z-10 pointer-events-none">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                    </span>
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{t("realtime.legend_active")}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="h-3 w-3 rounded-full bg-green-500 opacity-60"></span>
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{t("realtime.legend_24h")}</span>
+                  </div>
+                </div>
               </div>
 
               {/* Overlay Card */}

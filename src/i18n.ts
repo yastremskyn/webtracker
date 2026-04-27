@@ -111,7 +111,9 @@ const resources = {
         recent_events: "Recent Events",
         time: "Time",
         now: "Now",
-        minus_2m: "-2 min"
+        minus_2m: "-2 min",
+        legend_active: "Active (last 30m)",
+        legend_24h: "Activity (last 24h)"
       },
       users: {
         title: "Users List",
@@ -299,7 +301,9 @@ const resources = {
         recent_events: "Останні події",
         time: "Час",
         now: "Зараз",
-        minus_2m: "-2 хв"
+        minus_2m: "-2 хв",
+        legend_active: "Активні (ост. 30хв)",
+        legend_24h: "Активність (ост. 24год)"
       },
       users: {
         title: "Список користувачів",
