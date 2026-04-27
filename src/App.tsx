@@ -595,6 +595,23 @@ export default function App() {
     }, {} as Record<string, number>)
   ).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
+  const topSearchQueries = Object.entries(
+    events.reduce((acc, e) => {
+      if (e.url) {
+        try {
+          // If URL is relative, use a dummy base to parse query params
+          const urlStr = e.url.startsWith('http') ? e.url : `http://dummy.com${e.url.startsWith('/') ? '' : '/'}${e.url}`;
+          const urlObj = new URL(urlStr);
+          const q = urlObj.searchParams.get('q') || urlObj.searchParams.get('search') || urlObj.searchParams.get('query');
+          if (q) {
+            acc[q] = (acc[q] || 0) + 1;
+          }
+        } catch (err) {}
+      }
+      return acc;
+    }, {} as Record<string, number>)
+  ).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
   const uniqueUsers = new Set(events.map(e => e.sessionId)).size;
   const totalPageViews = events.filter(e => e.eventType === 'page_view').length;
   const totalClicks = events.filter(e => e.eventType === 'click').length;
@@ -989,21 +1006,41 @@ export default function App() {
             </div>
           </div>
 
-          {/* Top Pages */}
-          <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 transition-colors duration-200">
-            <h2 className="text-lg font-bold mb-6 text-gray-900 dark:text-white">{t("overview.popular_pages")}</h2>
-            <div className="space-y-4">
-              {topPages.length > 0 ? topPages.map(([url, views], index) => (
-                <div key={url} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    <span className="text-sm font-medium text-gray-400 w-4">{index + 1}</span>
-                    <span className="text-sm text-gray-700 dark:text-gray-300 truncate" title={url}>{url || '/'}</span>
+          {/* Top Pages & Search Queries Container */}
+          <div className="flex flex-col gap-6">
+            <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 transition-colors duration-200">
+              <h2 className="text-lg font-bold mb-6 text-gray-900 dark:text-white">{t("overview.popular_pages")}</h2>
+              <div className="space-y-4">
+                {topPages.length > 0 ? topPages.map(([url, views], index) => (
+                  <div key={url} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <span className="text-sm font-medium text-gray-400 w-4">{index + 1}</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300 truncate" title={url}>{url || '/'}</span>
+                    </div>
+                    <span className="text-sm font-semibold bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-700 dark:text-gray-300">{views}</span>
                   </div>
-                  <span className="text-sm font-semibold bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-700 dark:text-gray-300">{views}</span>
-                </div>
-              )) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">{t("overview.no_data")}</p>
-              )}
+                )) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">{t("overview.no_data")}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Popular Search Queries */}
+            <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 transition-colors duration-200">
+              <h2 className="text-lg font-bold mb-6 text-gray-900 dark:text-white">{t("overview.popular_search_queries")}</h2>
+              <div className="space-y-4">
+                {topSearchQueries.length > 0 ? topSearchQueries.map(([query, count], index) => (
+                  <div key={query} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <span className="text-sm font-medium text-gray-400 w-4">{index + 1}</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300 truncate" title={query}>{query}</span>
+                    </div>
+                    <span className="text-sm font-semibold bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-gray-700 dark:text-gray-300">{count}</span>
+                  </div>
+                )) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">{t("overview.no_data")}</p>
+                )}
+              </div>
             </div>
           </div>
         </div>
